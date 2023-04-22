@@ -54,6 +54,8 @@ configuration variables must be set.
 * `AWS_S3_ENDPOINT` - your S3 endpoint.
 * `S3_BUCKET` - the bucket you wish to use for LFS storage.
 
+You can use what you want for this. I use [direnv](https://github.com/direnv/direnv).
+
 ### Configure a fresh repo
 
 Starting a new repository is the easiest case.
