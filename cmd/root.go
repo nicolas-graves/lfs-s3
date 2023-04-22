@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/ngraves/git-lfs-s3/service"
+	"git.sr.ht/~ngraves/lfs-s3/service"
 )
 
 var (

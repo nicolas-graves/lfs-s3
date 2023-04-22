@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/ngraves/git-lfs-s3/cmd"
+	"git.sr.ht/~ngraves/lfs-s3/cmd"
 )
 
 func main() {
