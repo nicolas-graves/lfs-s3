@@ -40,7 +40,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 		line := scanner.Text()
 		var req api.Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil {
-			os.Stderr.WriteString(fmt.Sprintf("Error reading input:", err))
+			os.Stderr.WriteString(fmt.Sprintf("Error reading input: %s\n", err))
 			return
 		}
 
