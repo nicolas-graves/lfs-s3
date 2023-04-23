@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
 	"git.sr.ht/~ngraves/lfs-s3/service"
 )
 
@@ -12,34 +12,11 @@ var (
 	printVersion bool
 )
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd *cobra.Command
-
-// Execute adds all child commands to the root command sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-}
-
 func init() {
-	RootCmd = &cobra.Command{
-		Use:   "git-lfs-s3",
-		Short: "git-lfs custom transfer adapter to store all data in a S3 container",
-		Long: `git-lfs-s3 treats a S3 bucket as the remote store for LFS object
-		data.`,
-		Run: rootCommand,
-	}
+	flag.BoolVar(&printVersion, "version", false, "Print version")
 
-	RootCmd.Flags().BoolVarP(&printVersion, "version", "", false, "Print version")
-	RootCmd.SetUsageFunc(usageCommand)
-
-}
-
-func usageCommand(cmd *cobra.Command) error {
-	usage := `
+	flag.Usage = func() {
+		usage := `
 Usage:
   git-lfs-s3 [options]
 
@@ -52,11 +29,13 @@ Note:
 
   The arguments should be provided via gitconfig at lfs.customtransfer.<name>.args
 `
-	fmt.Fprintf(os.Stderr, usage)
-	return nil
+		fmt.Fprintf(os.Stderr, usage)
+	}
 }
 
-func rootCommand(cmd *cobra.Command, args []string) {
+// Execute runs the main logic of the program and handles command line arguments.
+func Execute() {
+	flag.Parse()
 
 	if printVersion {
 		os.Stderr.WriteString(fmt.Sprintf("git-lfs-s3 %v\n", Version))
