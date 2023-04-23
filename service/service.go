@@ -72,8 +72,10 @@ func (ptw *progressTrackingWriter) WriteAt(p []byte, off int64) (int, error) {
 		return n, err
 	}
 
-	ptw.bytesWritten += int64(n)
-	api.SendProgress(ptw.oid, ptw.bytesWritten, n, ptw.writerResponse, ptw.errWriter)
+	if n > 0 {
+		ptw.bytesWritten += int64(n)
+		api.SendProgress(ptw.oid, ptw.bytesWritten, n, ptw.writerResponse, ptw.errWriter)
+	}
 
 	return n, nil
 }
@@ -145,8 +147,10 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 		file.Close()
 	}()
 
+	waw := &writerAtWrapper{file}
+
 	ptw := &progressTrackingWriter{
-		writer:         file,
+		writer:         waw,
 		oid:            oid,
 		totalSize:      size,
 		writerResponse: writer,
@@ -155,7 +159,7 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 
 	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
 		d.PartSize = 5 * 1024 * 1024     // 1 MB part size
-		// d.Concurrency = 3                 // Concurrent downloads
+		d.Concurrency = 1                 // Concurrent downloads
 	})
 
 	_, err = downloader.Download(context.Background(), ptw, &s3.GetObjectInput{
