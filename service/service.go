@@ -31,6 +31,53 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+type progressTrackingReader struct {
+	io.Reader
+	Oid       string
+	TotalSize int64
+	Writer    *bufio.Writer
+	ErrWriter *bufio.Writer
+	bytesRead int64
+}
+
+func (r *progressTrackingReader) Read(p []byte) (n int, err error) {
+	n, err = r.Reader.Read(p)
+	if n > 0 {
+		r.bytesRead += int64(n)
+		api.SendProgress(r.Oid, r.bytesRead, n, r.Writer, r.ErrWriter)
+	}
+	return
+}
+
+type writerAtWrapper struct {
+	w io.Writer
+}
+
+func (waw *writerAtWrapper) WriteAt(p []byte, off int64) (n int, err error) {
+	return waw.w.Write(p)
+}
+
+type progressTrackingWriter struct {
+	writer         io.WriterAt
+	oid            string
+	totalSize      int64
+	writerResponse *bufio.Writer
+	errWriter      *bufio.Writer
+	bytesWritten   int64
+}
+
+func (ptw *progressTrackingWriter) WriteAt(p []byte, off int64) (int, error) {
+	n, err := ptw.writer.WriteAt(p, off)
+	if err != nil {
+		return n, err
+	}
+
+	ptw.bytesWritten += int64(n)
+	api.SendProgress(ptw.oid, ptw.bytesWritten, n, ptw.writerResponse, ptw.errWriter)
+
+	return n, nil
+}
+
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := bufio.NewWriter(stdout)
@@ -98,12 +145,20 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 		file.Close()
 	}()
 
+	ptw := &progressTrackingWriter{
+		writer:         file,
+		oid:            oid,
+		totalSize:      size,
+		writerResponse: writer,
+		errWriter:      errWriter,
+	}
+
 	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
-		d.PartSize = 10 * 1024 * 1024     // 10 MB part size
-		d.Concurrency = 3                 // Concurrent downloads
+		d.PartSize = 5 * 1024 * 1024     // 1 MB part size
+		// d.Concurrency = 3                 // Concurrent downloads
 	})
 
-	_, err = downloader.Download(context.Background(), file, &s3.GetObjectInput{
+	_, err = downloader.Download(context.Background(), ptw, &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(oid),
 	})
@@ -133,15 +188,23 @@ func store(oid string, size int64, action *api.Action, writer, errWriter *bufio.
 	defer file.Close()
 
 	uploader := manager.NewUploader(client, func(u *manager.Uploader) {
-		u.PartSize = 10 * 1024 * 1024     // 10 MB part size
-		u.LeavePartsOnError = true        // Keep uploaded parts on error
-		u.Concurrency = 3                 // Concurrent uploads
+		u.PartSize = 5 * 1024 * 1024     // 1 MB part size
+		// u.LeavePartsOnError = true        // Keep uploaded parts on error
+		// u.Concurrency = 3                 // Concurrent uploads
 	})
+
+	progressReader := &progressTrackingReader{
+		Reader:    file,
+		Oid:       oid,
+		TotalSize: size,
+		Writer:    writer,
+		ErrWriter: errWriter,
+	}
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(oid),
-		Body:   file,
+		Body:   progressReader,
 	})
 
 	if err != nil {

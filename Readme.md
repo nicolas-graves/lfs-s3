@@ -124,5 +124,8 @@ when you clone fresh. Here's the sequence:
   without the work done by Steve Streeting on
   [lfs-folderstore](https://github.com/sinbad/lfs-folderstore). Thanks
   to him! The license is therefore also MIT here.
-* Upload and download progress report have not been implemented yet. PR welcome.
+* Upload and download progress report are implemented, but they only
+  report for every 5 MB of data. This is currently hardcoded, as it's
+  the limit value for my S3 provider. It can be put in an environment
+  variable later if necessary.
 * I don't use Windows. Please report issues if you experience them there.
