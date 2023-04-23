@@ -24,7 +24,7 @@ either outdated or too complex (I don't need to have a server running
 just to send a file to S3).
 
 If you already have plenty of storage sitting on a NAS somewhere, or via
-Dropbox, Google Drive, you might want to check out
+Dropbox, Google Drive, you might instead want to check out
 [lfs-folderstore](https://github.com/sinbad/lfs-folderstore).
 
 
@@ -54,6 +54,14 @@ configuration variables must be set.
 * `AWS_S3_ENDPOINT` - your S3 endpoint.
 * `S3_BUCKET` - the bucket you wish to use for LFS storage.
 
+Although there is AWS in the environment variables, it should work
+with any S3 provider, given it has the same configuration. I use OVH
+for instance.
+
+You can simply test if your S3 provider works with a `.envrc` file
+given as an argument to the test file `test.sh`. Note that this will
+upload a random 1mb binary to your bucket.
+
 You can use what you want for this. I use [direnv](https://github.com/direnv/direnv).
 
 ### Configure a fresh repo
@@ -70,12 +78,9 @@ Starting a new repository is the easiest case.
 
 A few things to note:
 
-* I don't use Windows. Please report issues if you experience them there.
 * The `standalonetransferagent` forced Git LFS to use the folder agent for all
   pushes and pulls. If you want to use another remote which uses the standard
   LFS API, you should see the next section.
-* Although there is AWS in the environment variables, it should work
-  with any S3 provider, given it has the same configuration.
 
 ### Configure an existing repo
 
@@ -92,8 +97,6 @@ you want to either move to a folder, or replicate, it's a little more complicate
 
 ### Cloning a repo
 
-(Warning) : This has not been tested, but should work. Comes with no guarantee.
-
 There is one downside to this 'simple' approach to LFS storage - on cloning a
 repository, git-lfs can't know how to fetch the LFS content, until you configure
 things again using `git config`. That's the nature of the fact that you're using
@@ -109,18 +112,17 @@ when you clone fresh. Here's the sequence:
   * `git config --add lfs.customtransfer.lfs-s3.path lfs-s3`
   * `git config --add lfs.standalonetransferagent lfs-folder`
 * `git reset --hard master`
-  * This will sort out the LFS files in your checkout and copy the content from the now-configured shared folder
+* `git lfs pull`
 
 ## Notes
 
-* The shared folder is, to git, still a "remote" and so separate from clones. It
-  only interacts with it during `fetch`, `pull` and `push`.
 * It's entirely up to you whether you use different S3 buckets per project, or
   share one between many projects. In the former case, it's easier to reclaim
   space by deleting a specific project, in the latter case you can save space if
-  you have common files between projects (they'll have the same hash)
+  you have common files between projects (they'll have the same hash).
 * This would not have been possible in Go (I had a python version)
   without the work done by Steve Streeting on
   [lfs-folderstore](https://github.com/sinbad/lfs-folderstore). Thanks
   to him! The license is therefore also MIT here.
 * Upload and download progress report have not been implemented yet. PR welcome.
+* I don't use Windows. Please report issues if you experience them there.
