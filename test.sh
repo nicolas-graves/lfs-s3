@@ -10,12 +10,11 @@ fi
 ENVRC="$1"
 
 # Use a variant of the program to see input and output to the program.
-go build main.go
-echo -e "#!/usr/bin/env sh\n\ntee -a ../input.log | ../../main | tee -a ../output.log >&1\n" > main.sh
-chmod +x main.sh
-
-rm -rf test
-mkdir test
+go build main.go &&\
+echo -e "#!/usr/bin/env sh\n\ntee -a ../input.log | ../../main 2> ../error.log | tee -a ../output.log >&1\n" > main.sh &&\
+chmod +x main.sh &&\
+rm -rf test &&\
+mkdir test &&\
 cd test && (
   mkdir fake-remote-repo && cd fake-remote-repo
   git init --bare
