@@ -26,13 +26,15 @@ cd test && (
       git add .gitattributes
       git config --add lfs.customtransfer.lfs-s3.path ../../main.sh
       git config --add lfs.standalonetransferagent lfs-s3
+      git config --add lfs.concurrenttransfers 2
       git commit -m "Adding .gitattributes"
       echo "# This is a lfs-s3 test." > README.md
-      dd if=/dev/urandom of=1mb-blob.bin bs=1024 count=1024
-      git add README.md 1mb-blob.bin
+      dd if=/dev/urandom of=blob1.bin bs=1024 count=1024
+      dd if=/dev/urandom of=blob2.bin bs=1024 count=1024
+      git add README.md blob*.bin
       git commit -m "Adding files"
       source "$ENVRC"
-      GIT_TRACE=1 git push origin master
+      git push origin master
       git remote -v
     ) && cd ..
   git clone --progress fake-remote-repo local-repo-dup &&\
@@ -40,6 +42,7 @@ cd test && (
       git lfs install --local
       git config --add lfs.customtransfer.lfs-s3.path ../../main.sh
       git config --add lfs.standalonetransferagent lfs-s3
+      git config --add lfs.concurrenttransfers 2
       source "$ENVRC"
       git reset --hard master
       git lfs pull
