@@ -87,12 +87,16 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
-	localPath := fmt.Sprintf("%s.tmp", oid)
+	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Create(localPath)
 	if err != nil {
+		util.WriteToStderr(fmt.Sprintf("Error creating file: %v\n", err), errWriter)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		file.Sync()
+		file.Close()
+	}()
 
 	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
 		d.PartSize = 10 * 1024 * 1024     // 10 MB part size
@@ -105,6 +109,7 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 	})
 
 	if err != nil {
+		util.WriteToStderr(fmt.Sprintf("Error downloading file: %v\n", err), errWriter)
 		return
 	}
 
