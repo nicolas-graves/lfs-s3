@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"git.sr.ht/~ngraves/lfs-s3/service"
@@ -11,10 +12,12 @@ import (
 var Version = "Custom build"
 var (
 	printVersion bool
+	debug        bool
 )
 
 func init() {
 	flag.BoolVar(&printVersion, "version", false, "Print version")
+	flag.BoolVar(&debug, "debug", false, "Enable debug output")
 
 	flag.Usage = func() {
 		usage := `
@@ -23,6 +26,7 @@ Usage:
 
 Options:
   --version    Report the version number and exit
+  --debug      Enable debug output
 
 Note:
   This tool should only be called by git-lfs as documented in Custom Transfers:
@@ -43,7 +47,12 @@ func execute() {
 		os.Exit(0)
 	}
 
-	service.Serve(os.Stdin, os.Stdout, os.Stderr)
+	service.Serve(os.Stdin, os.Stdout, func() io.Writer {
+		if debug {
+			return os.Stderr
+		}
+		return io.Discard
+	}())
 }
 
 func main() {
