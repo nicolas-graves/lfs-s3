@@ -4,20 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 )
 
 // Header struct
 type Header struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
-}
-
-// Action struct
-type Action struct {
-	Href      string            `json:"href"`
-	Header    map[string]string `json:"header,omitempty"`
-	ExpiresAt time.Time         `json:"expires_at,omitempty"`
 }
 
 // Error struct
@@ -44,7 +36,6 @@ type Request struct {
 	Oid                 string  `json:"oid"`
 	Size                int64   `json:"size"`
 	Path                string  `json:"path"`
-	Action              *Action `json:"action"`
 }
 
 // InitResponse with response for init

@@ -70,10 +70,10 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 			api.SendResponse(resp, writer, stderr)
 		case "download":
 			fmt.Fprintf(stderr, fmt.Sprintf("Received download request for %s\n", req.Oid))
-			retrieve(req.Oid, req.Size, req.Action, writer, stderr)
+			retrieve(req.Oid, req.Size, writer, stderr)
 		case "upload":
 			fmt.Fprintf(stderr, fmt.Sprintf("Received upload request for %s\n", req.Oid))
-			store(req.Oid, req.Size, req.Action, writer, stderr)
+			store(req.Oid, req.Size, writer, stderr)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break
@@ -103,7 +103,7 @@ func createS3Client() *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-func retrieve(oid string, size int64, action *api.Action, writer io.Writer, stderr io.Writer) {
+func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
@@ -149,7 +149,7 @@ func retrieve(oid string, size int64, action *api.Action, writer io.Writer, stde
 	}
 }
 
-func store(oid string, size int64, action *api.Action, writer io.Writer, stderr io.Writer) {
+func store(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
