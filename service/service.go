@@ -29,7 +29,7 @@ type progressTracker struct {
     Writer      io.WriterAt
     Oid         string
     TotalSize   int64
-    RespWriter  *bufio.Writer
+    RespWriter  io.Writer
     ErrWriter   io.Writer
     bytesProcessed int64
 }
@@ -54,7 +54,7 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
-	writer := bufio.NewWriter(stdout)
+	writer := io.Writer(stdout)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -103,7 +103,7 @@ func createS3Client() *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-func retrieve(oid string, size int64, action *api.Action, writer *bufio.Writer, stderr io.Writer) {
+func retrieve(oid string, size int64, action *api.Action, writer io.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
@@ -149,7 +149,7 @@ func retrieve(oid string, size int64, action *api.Action, writer *bufio.Writer, 
 	}
 }
 
-func store(oid string, size int64, action *api.Action, writer *bufio.Writer, stderr io.Writer) {
+func store(oid string, size int64, action *api.Action, writer io.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 

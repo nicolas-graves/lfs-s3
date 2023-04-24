@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,7 +69,7 @@ type ProgressResponse struct {
 }
 
 // SendResponse sends an actual response to lfs
-func SendResponse(r interface{}, writer *bufio.Writer, stderr io.Writer) error {
+func SendResponse(r interface{}, writer io.Writer, stderr io.Writer) error {
 	b, err := json.Marshal(r)
 	if err != nil {
 		fmt.Fprintf(stderr, fmt.Sprintf("Error marshalling response: %s", err))
@@ -82,13 +81,12 @@ func SendResponse(r interface{}, writer *bufio.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	writer.Flush()
 	fmt.Fprintf(stderr, fmt.Sprintf("Sent message %v", string(b)))
 	return nil
 }
 
 // SendTransferError sends an error back to lfs
-func SendTransferError(oid string, code int, message string, writer *bufio.Writer, stderr io.Writer) {
+func SendTransferError(oid string, code int, message string, writer io.Writer, stderr io.Writer) {
 	resp := &TransferResponse{"complete", oid, "", &Error{code, message}}
 	err := SendResponse(resp, writer, stderr)
 	if err != nil {
@@ -97,7 +95,7 @@ func SendTransferError(oid string, code int, message string, writer *bufio.Write
 }
 
 // SendProgress reports progress on operations
-func SendProgress(oid string, bytesSoFar int64, bytesSinceLast int, writer *bufio.Writer, stderr io.Writer) {
+func SendProgress(oid string, bytesSoFar int64, bytesSinceLast int, writer io.Writer, stderr io.Writer) {
 	resp := &ProgressResponse{"progress", oid, bytesSoFar, bytesSinceLast}
 	err := SendResponse(resp, writer, stderr)
 	if err != nil {
