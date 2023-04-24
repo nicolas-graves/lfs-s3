@@ -17,20 +17,6 @@ import (
 	"git.sr.ht/~ngraves/lfs-s3/util"
 )
 
-type Message struct {
-	Event  string  `json:"event"`
-	Oid    string  `json:"oid"`
-	Size   *int64  `json:"size,omitempty"`
-	Path   string  `json:"path,omitempty"`
-	Action string  `json:"action,omitempty"`
-	Error  *Error  `json:"error,omitempty"`
-}
-
-type Error struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
 type writerAtWrapper struct {
 	w io.Writer
 }

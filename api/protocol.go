@@ -22,8 +22,17 @@ type Action struct {
 	ExpiresAt time.Time         `json:"expires_at,omitempty"`
 }
 
-// TransferError struct
-type TransferError struct {
+// Error struct
+type Message struct {
+	Event  string  `json:"event"`
+	Oid    string  `json:"oid"`
+	Size   *int64  `json:"size,omitempty"`
+	Path   string  `json:"path,omitempty"`
+	Action string  `json:"action,omitempty"`
+	Error  *Error  `json:"error,omitempty"`
+}
+
+type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
@@ -42,7 +51,7 @@ type Request struct {
 
 // InitResponse with response for init
 type InitResponse struct {
-	Error *TransferError `json:"error,omitempty"`
+	Error *Error `json:"error,omitempty"`
 }
 
 // TransferResponse generic transfer response
@@ -50,7 +59,7 @@ type TransferResponse struct {
 	Event string         `json:"event"`
 	Oid   string         `json:"oid"`
 	Path  string         `json:"path,omitempty"` // always blank for upload
-	Error *TransferError `json:"error,omitempty"`
+	Error *Error `json:"error,omitempty"`
 }
 
 // ProgressResponse blah
@@ -80,7 +89,7 @@ func SendResponse(r interface{}, writer, errWriter *bufio.Writer) error {
 
 // SendTransferError sends an error back to lfs
 func SendTransferError(oid string, code int, message string, writer, errWriter *bufio.Writer) {
-	resp := &TransferResponse{"complete", oid, "", &TransferError{code, message}}
+	resp := &TransferResponse{"complete", oid, "", &Error{code, message}}
 	err := SendResponse(resp, writer, errWriter)
 	if err != nil {
 		util.WriteToStderr(fmt.Sprintf("Unable to send transfer error: %v\n", err), errWriter)
