@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 
 	"git.sr.ht/~ngraves/lfs-s3/api"
-	"git.sr.ht/~ngraves/lfs-s3/util"
 )
 
 type writerAtWrapper struct {
@@ -31,7 +30,7 @@ type progressTracker struct {
     Oid         string
     TotalSize   int64
     RespWriter  *bufio.Writer
-    ErrWriter   *bufio.Writer
+    ErrWriter   io.Writer
     bytesProcessed int64
 }
 
@@ -56,28 +55,27 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := bufio.NewWriter(stdout)
-	errWriter := bufio.NewWriter(stderr)
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		var req api.Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil {
-			os.Stderr.WriteString(fmt.Sprintf("Error reading input: %s\n", err))
+			fmt.Fprintf(stderr, fmt.Sprintf("Error reading input: %s\n", err))
 			return
 		}
 
 		switch req.Event {
 		case "init":
 			resp := &api.InitResponse{}
-			api.SendResponse(resp, writer, errWriter)
+			api.SendResponse(resp, writer, stderr)
 		case "download":
-			util.WriteToStderr(fmt.Sprintf("Received download request for %s\n", req.Oid), errWriter)
-			retrieve(req.Oid, req.Size, req.Action, writer, errWriter)
+			fmt.Fprintf(stderr, fmt.Sprintf("Received download request for %s\n", req.Oid))
+			retrieve(req.Oid, req.Size, req.Action, writer, stderr)
 		case "upload":
-			util.WriteToStderr(fmt.Sprintf("Received upload request for %s\n", req.Oid), errWriter)
-			store(req.Oid, req.Size, req.Action, writer, errWriter)
+			fmt.Fprintf(stderr, fmt.Sprintf("Received upload request for %s\n", req.Oid))
+			store(req.Oid, req.Size, req.Action, writer, stderr)
 		case "terminate":
-			util.WriteToStderr("Terminating test custom adapter gracefully.\n", errWriter)
+			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break
 		}
 	}
@@ -105,14 +103,14 @@ func createS3Client() *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-func retrieve(oid string, size int64, action *api.Action, writer, errWriter *bufio.Writer) {
+func retrieve(oid string, size int64, action *api.Action, writer *bufio.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Create(localPath)
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Error creating file: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Error creating file: %v\n", err))
 		return
 	}
 	defer func() {
@@ -126,7 +124,7 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 		Oid:            oid,
 		TotalSize:      size,
 		RespWriter:     writer,
-		ErrWriter:      errWriter,
+		ErrWriter:      stderr,
 	}
 
 	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
@@ -140,25 +138,25 @@ func retrieve(oid string, size int64, action *api.Action, writer, errWriter *buf
 	})
 
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Error downloading file: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Error downloading file: %v\n", err))
 		return
 	}
 
 	complete := &api.TransferResponse{Event: "complete", Oid: oid, Path: localPath, Error: nil}
-	err = api.SendResponse(complete, writer, errWriter)
+	err = api.SendResponse(complete, writer, stderr)
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Unable to send completion message: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send completion message: %v\n", err))
 	}
 }
 
-func store(oid string, size int64, action *api.Action, writer, errWriter *bufio.Writer) {
+func store(oid string, size int64, action *api.Action, writer *bufio.Writer, stderr io.Writer) {
 	client := createS3Client()
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Open(localPath)
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Error opening file: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Error opening file: %v\n", err))
 		return
 	}
 	defer func() {
@@ -176,7 +174,7 @@ func store(oid string, size int64, action *api.Action, writer, errWriter *bufio.
 		Oid:        oid,
 		TotalSize:  size,
 		RespWriter: writer,
-		ErrWriter:  errWriter,
+		ErrWriter:  stderr,
 	}
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
@@ -186,13 +184,13 @@ func store(oid string, size int64, action *api.Action, writer, errWriter *bufio.
 	})
 
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Error uploading file: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Error uploading file: %v\n", err))
 		return
 	}
 
 	complete := &api.TransferResponse{Event: "complete", Oid: oid, Error: nil}
-	err = api.SendResponse(complete, writer, errWriter)
+	err = api.SendResponse(complete, writer, stderr)
 	if err != nil {
-		util.WriteToStderr(fmt.Sprintf("Unable to send completion message: %v\n", err), errWriter)
+		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send completion message: %v\n", err))
 	}
 }
