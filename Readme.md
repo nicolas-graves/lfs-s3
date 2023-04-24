@@ -84,7 +84,9 @@ A few things to note:
 
 ### Configure an existing repo
 
-(Warning) : This has not been tested, but should work. Comes with no guarantee.
+(Warning) : This has been tested on simple repositories in `test.sh`,
+but I can't get it to work on complex repositories. Comes with no
+guarantee. Feedback welcome.
 
 If you already have a Git LFS repository pushing to a standard LFS server, and
 you want to either move to a folder, or replicate, it's a little more complicated.

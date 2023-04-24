@@ -21,17 +21,20 @@ cd test && (
   cd ..
   git clone --progress fake-remote-repo local-repo &&\
     cd local-repo && (
+      echo "# This is a lfs-s3 test." > README.md
+      git add README.md
+      git commit -m "Add pre-lfs commit."
+      git push origin master
       git lfs install --local
       git lfs track "*.bin"
       git add .gitattributes
+      git commit -m "Adding .gitattributes"
       git config --add lfs.customtransfer.lfs-s3.path ../../main.sh
       git config --add lfs.standalonetransferagent lfs-s3
       git config --add lfs.concurrenttransfers 2
-      git commit -m "Adding .gitattributes"
-      echo "# This is a lfs-s3 test." > README.md
       dd if=/dev/urandom of=blob1.bin bs=1024 count=1024
       dd if=/dev/urandom of=blob2.bin bs=1024 count=1024
-      git add README.md blob*.bin
+      git add blob*.bin
       git commit -m "Adding files"
       source "$ENVRC"
       git push origin master
