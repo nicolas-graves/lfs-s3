@@ -2,7 +2,7 @@
 
 ## What is it?
 
-`lfs-s3` is a [Custom Transfer
+`lfs-s3` is a tiny (under 300 SLOC) [Custom Transfer
 Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
 for [Git LFS](https://git-lfs.github.com/) which allows you to use a plain
 folder as the remote storage location for all your large media files.
