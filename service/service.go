@@ -189,12 +189,14 @@ func store(oid string, size int64, action *api.Action, writer, errWriter *bufio.
 		util.WriteToStderr(fmt.Sprintf("Error opening file: %v\n", err), errWriter)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		file.Sync()
+		file.Close()
+	}()
 
 	uploader := manager.NewUploader(client, func(u *manager.Uploader) {
 		u.PartSize = 5 * 1024 * 1024     // 1 MB part size
 		// u.LeavePartsOnError = true        // Keep uploaded parts on error
-		// u.Concurrency = 3                 // Concurrent uploads
 	})
 
 	progressReader := &progressTrackingReader{
