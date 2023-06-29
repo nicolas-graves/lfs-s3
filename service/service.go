@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"git.sr.ht/~ngraves/lfs-s3/api"
 )
@@ -25,13 +26,13 @@ func (waw *writerAtWrapper) WriteAt(p []byte, off int64) (n int, err error) {
 }
 
 type progressTracker struct {
-    Reader      io.Reader
-    Writer      io.WriterAt
-    Oid         string
-    TotalSize   int64
-    RespWriter  io.Writer
-    ErrWriter   io.Writer
-    bytesProcessed int64
+	Reader         io.Reader
+	Writer         io.WriterAt
+	Oid            string
+	TotalSize      int64
+	RespWriter     io.Writer
+	ErrWriter      io.Writer
+	bytesProcessed int64
 }
 
 func (rw *progressTracker) Read(p []byte) (n int, err error) {
@@ -100,7 +101,13 @@ func createS3Client() *s3.Client {
 		})),
 	)
 
-	return s3.NewFromConfig(cfg)
+	return s3.NewFromConfig(cfg, func(o *s3.Options) {
+		usePathStyle, err := strconv.ParseBool(os.Getenv("S3_USEPATHSTYLE"))
+		if err != nil {
+			usePathStyle = false
+		}
+		o.UsePathStyle = usePathStyle
+	})
 }
 
 func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
@@ -120,16 +127,16 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
 
 	waw := &writerAtWrapper{file}
 	progressWriter := &progressTracker{
-		Writer:         waw,
-		Oid:            oid,
-		TotalSize:      size,
-		RespWriter:     writer,
-		ErrWriter:      stderr,
+		Writer:     waw,
+		Oid:        oid,
+		TotalSize:  size,
+		RespWriter: writer,
+		ErrWriter:  stderr,
 	}
 
 	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
-		d.PartSize = 5 * 1024 * 1024     // 1 MB part size
-		d.Concurrency = 1                 // Concurrent downloads
+		d.PartSize = 5 * 1024 * 1024 // 1 MB part size
+		d.Concurrency = 1            // Concurrent downloads
 	})
 
 	_, err = downloader.Download(context.Background(), progressWriter, &s3.GetObjectInput{
@@ -165,7 +172,7 @@ func store(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	}()
 
 	uploader := manager.NewUploader(client, func(u *manager.Uploader) {
-		u.PartSize = 5 * 1024 * 1024     // 1 MB part size
+		u.PartSize = 5 * 1024 * 1024 // 1 MB part size
 		// u.LeavePartsOnError = true        // Keep uploaded parts on error
 	})
 
