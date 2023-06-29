@@ -53,6 +53,7 @@ configuration variables must be set.
 * `AWS_SECRET_ACCESS_KEY` - your secret key.
 * `AWS_S3_ENDPOINT` - your S3 endpoint.
 * `S3_BUCKET` - the bucket you wish to use for LFS storage.
+* `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
 
 Although there is AWS in the environment variables, it should work
 with any S3 provider, given it has the same configuration. I use OVH
