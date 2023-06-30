@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"git.sr.ht/~ngraves/lfs-s3/api"
+	"github.com/joho/godotenv"
 )
 
 type writerAtWrapper struct {
@@ -83,6 +84,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 }
 
 func createS3Client() *s3.Client {
+	godotenv.Load(".env")
 	region := os.Getenv("AWS_REGION")
 	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
 	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
