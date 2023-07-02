@@ -1,4 +1,4 @@
 test
-main
-main.sh
 lfs-s3
+lfs-s3.sh
+.envrc
