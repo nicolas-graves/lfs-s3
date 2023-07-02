@@ -53,7 +53,24 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 	return
 }
 
+func checkEnvVars(vars []string) error {
+    for _, v := range vars {
+        if value := os.Getenv(v); value == "" {
+            return fmt.Errorf("environment variable %s not defined", v)
+        }
+    }
+    return nil
+}
+
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
+	requiredVars := []string{
+		"AWS_REGION",
+		"AWS_ACCESS_KEY_ID",
+		"AWS_SECRET_ACCESS_KEY",
+		"AWS_S3_ENDPOINT",
+		"S3_BUCKET",
+	}
+
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
 
@@ -67,6 +84,16 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 
 		switch req.Event {
 		case "init":
+			if err := checkEnvVars(requiredVars); err != nil {
+				errorResp := &api.InitResponse{
+					Error: &api.Error{
+						Code:    1,
+						Message: fmt.Sprintf("Initialization error: %s.", err),
+					},
+				}
+				api.SendResponse(errorResp, writer, stderr)
+				return
+			}
 			resp := &api.InitResponse{}
 			api.SendResponse(resp, writer, stderr)
 		case "download":
