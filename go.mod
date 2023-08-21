@@ -1,7 +1,7 @@
 module git.sr.ht/~ngraves/lfs-s3
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.17.3
+	github.com/aws/aws-sdk-go-v2 v1.20.3
 	github.com/aws/aws-sdk-go-v2/config v1.18.5
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.44
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.0
@@ -22,7 +22,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.11.27 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.7 // indirect
-	github.com/aws/smithy-go v1.13.5 // indirect
+	github.com/aws/smithy-go v1.14.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
 
