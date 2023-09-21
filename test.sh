@@ -16,7 +16,7 @@ esac
 
 # Use a wrapper to see input and output to the program.
 go build &&\
-echo -e "#!/usr/bin/env sh\n\ntee -a ../input.log | ../../lfs-s3 --debug 2> ../error.log | tee -a ../output.log >&1\n" > lfs-s3.sh &&\
+echo -e "#!/usr/bin/env sh\n\ntee -a /tmp/git-lfs-input.log | ${PWD}/lfs-s3 --debug 2> /tmp/git-lfs-error.log | tee -a /tmp/git-lfs-output.log >&1\n" > lfs-s3.sh &&\
 chmod +x lfs-s3.sh &&\
 rm -rf test &&\
 mkdir test &&\
