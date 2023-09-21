@@ -7,9 +7,14 @@ then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENVRC="$1"
+case "$ENVRC" in
+  /*) ;;
+  *) ENVRC="$SCRIPT_DIR/$ENVRC";;
+esac
 
-# Use a variant of the program to see input and output to the program.
+# Use a wrapper to see input and output to the program.
 go build &&\
 echo -e "#!/usr/bin/env sh\n\ntee -a ../input.log | ../../lfs-s3 --debug 2> ../error.log | tee -a ../output.log >&1\n" > lfs-s3.sh &&\
 chmod +x lfs-s3.sh &&\
