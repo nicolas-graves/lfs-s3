@@ -63,7 +63,7 @@ type ProgressResponse struct {
 func SendResponse(r interface{}, writer io.Writer, stderr io.Writer) error {
 	b, err := json.Marshal(r)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Error marshalling response: %s", err))
+		fmt.Fprintf(stderr, "Error marshalling response: %s", err)
 		return err
 	}
 	// Line oriented JSON
@@ -72,7 +72,7 @@ func SendResponse(r interface{}, writer io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stderr, fmt.Sprintf("Sent message %v", string(b)))
+	fmt.Fprintf(stderr, "Sent message %v", string(b))
 	return nil
 }
 
@@ -81,7 +81,7 @@ func SendTransferError(oid string, code int, message string, writer io.Writer, s
 	resp := &TransferResponse{"complete", oid, "", &Error{code, message}}
 	err := SendResponse(resp, writer, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send transfer error: %v\n", err))
+		fmt.Fprintf(stderr, "Unable to send transfer error: %v\n", err)
 	}
 }
 
@@ -90,6 +90,6 @@ func SendProgress(oid string, bytesSoFar int64, bytesSinceLast int, writer io.Wr
 	resp := &ProgressResponse{"progress", oid, bytesSoFar, bytesSinceLast}
 	err := SendResponse(resp, writer, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send progress update: %v\n", err))
+		fmt.Fprintf(stderr, "Unable to send progress update: %v\n", err)
 	}
 }

@@ -78,7 +78,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 		line := scanner.Text()
 		var req api.Request
 		if err := json.Unmarshal([]byte(line), &req); err != nil {
-			fmt.Fprintf(stderr, fmt.Sprintf("Error reading input: %s\n", err))
+			fmt.Fprintf(stderr, "Error reading input: %s\n", err)
 			return
 		}
 
@@ -97,10 +97,10 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 			resp := &api.InitResponse{}
 			api.SendResponse(resp, writer, stderr)
 		case "download":
-			fmt.Fprintf(stderr, fmt.Sprintf("Received download request for %s\n", req.Oid))
+			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
 			retrieve(req.Oid, req.Size, writer, stderr)
 		case "upload":
-			fmt.Fprintf(stderr, fmt.Sprintf("Received upload request for %s\n", req.Oid))
+			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
 			store(req.Oid, req.Size, writer, stderr)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
@@ -144,7 +144,7 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Create(localPath)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Error creating file: %v\n", err))
+		fmt.Fprintf(stderr, "Error creating file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -172,14 +172,14 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	})
 
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Error downloading file: %v\n", err))
+		fmt.Fprintf(stderr, "Error downloading file: %v\n", err)
 		return
 	}
 
 	complete := &api.TransferResponse{Event: "complete", Oid: oid, Path: localPath, Error: nil}
 	err = api.SendResponse(complete, writer, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send completion message: %v\n", err))
+		fmt.Fprintf(stderr, "Unable to send completion message: %v\n", err)
 	}
 }
 
@@ -190,7 +190,7 @@ func store(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Open(localPath)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Error opening file: %v\n", err))
+		fmt.Fprintf(stderr, "Error opening file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -218,13 +218,13 @@ func store(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	})
 
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Error uploading file: %v\n", err))
+		fmt.Fprintf(stderr, "Error uploading file: %v\n", err)
 		return
 	}
 
 	complete := &api.TransferResponse{Event: "complete", Oid: oid, Error: nil}
 	err = api.SendResponse(complete, writer, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, fmt.Sprintf("Unable to send completion message: %v\n", err))
+		fmt.Fprintf(stderr, "Unable to send completion message: %v\n", err)
 	}
 }
