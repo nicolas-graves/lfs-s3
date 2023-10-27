@@ -64,10 +64,6 @@ func checkEnvVars(vars []string) error {
 
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	requiredVars := []string{
-		"AWS_REGION",
-		"AWS_ACCESS_KEY_ID",
-		"AWS_SECRET_ACCESS_KEY",
-		"AWS_S3_ENDPOINT",
 		"S3_BUCKET",
 	}
 
@@ -111,21 +107,18 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 
 func createS3Client() *s3.Client {
 	region := os.Getenv("AWS_REGION")
-	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
-	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	endpointURL := os.Getenv("AWS_S3_ENDPOINT")
 
 	cfg, _ := config.LoadDefaultConfig(context.TODO(),
 		config.WithEndpointResolver(aws.EndpointResolverFunc(
 			func(service, _ string) (aws.Endpoint, error) {
-				return aws.Endpoint{URL: endpointURL, SigningRegion: region}, nil
+				if (endpointURL == "" || region == "") {
+					// fallback to default endpoint configuration
+					return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+				} else {
+					return aws.Endpoint{URL: endpointURL, SigningRegion: region}, nil
+				}
 			})),
-		config.WithCredentialsProvider(aws.CredentialsProviderFunc(func(context.Context) (aws.Credentials, error) {
-			return aws.Credentials{
-				AccessKeyID:     accessKey,
-				SecretAccessKey: secretKey,
-			}, nil
-		})),
 	)
 
 	return s3.NewFromConfig(cfg, func(o *s3.Options) {
