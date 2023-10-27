@@ -45,15 +45,19 @@ this.
 
 ### Environment variables
 
-All S3 configuration options use environment variables. All of these
-configuration variables must be set.
+All S3 configuration options use environment variables. Only `S3_BUCKET`
+is required.
 
-* `AWS_REGION` - the region where your S3 bucket is.
-* `AWS_ACCESS_KEY_ID` - your access key.
-* `AWS_SECRET_ACCESS_KEY` - your secret key.
-* `AWS_S3_ENDPOINT` - your S3 endpoint.
+* `AWS_REGION` - the region where your S3 bucket is.  If not provided
+  the default from AWS SDK is used.
+* `AWS_S3_ENDPOINT` - Your S3 endpoint.  If not provided the default
+  from AWS SDK is used.
 * `S3_BUCKET` - the bucket you wish to use for LFS storage.
 * `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
+
+The
+[default](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials)
+AWS SDK mechanisms are used for gathering credentials.
 
 Although there is AWS in the environment variables, it should work
 with any S3 provider, given it has the same configuration. I use OVH
