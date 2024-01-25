@@ -2,29 +2,28 @@
 
 ## What is it?
 
-`lfs-s3` is a tiny (under 300 SLOC) [Custom Transfer
+`lfs-s3` is a tiny (~300 SLOC) [Custom Transfer
 Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
-for [Git LFS](https://git-lfs.github.com/) which allows you to use a plain
-folder as the remote storage location for all your large media files.
+for [Git LFS](https://git-lfs.github.com/) which allows you to use S3
+as the remote storage location for all your large media files.
 
 ## Why?
 
-Let's say you use Git, but you don't use any fancy hosting solution. You just
-use a plain Git repo on a server somewhere, perhaps using SSH so you don't even
-need a web server. It's simple and great.
+Let's say you use a simple plain Git repo, without any fancy hosting
+solution. It's simple and great.
 
 But how do you use Git LFS? It usually wants a server to expose API endpoints.
 Sure you could use one of the [big](https://bitbucket.org) [hosting](https://github.com)
 [providers](https://gitlab.com), but that makes everything more complicated.
 
 If you want a git repository that just works and simply sends its
-binary files to an s3 provider, this is what this adapter does.
+binary files to an s3 provider, this is what this agent does.
 There are plenty of similar "solutions" out there, but they all seem
-either outdated or too complex (I don't need to have a server running
-just to send a file to S3).
+either outdated or too complex (I don't need a running server to send
+a file!).
 
-If you already have plenty of storage sitting on a NAS somewhere, or via
-Dropbox, Google Drive, you might instead want to check out
+If you already have plenty of storage sitting on a NAS, Dropbox or
+Google Drive, you might instead want to check out
 [lfs-folderstore](https://github.com/sinbad/lfs-folderstore).
 
 
