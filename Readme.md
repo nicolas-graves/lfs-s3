@@ -12,20 +12,12 @@ as the remote storage location for all your large media files.
 Let's say you use a simple plain Git repo, without any fancy hosting
 solution. It's simple and great.
 
-But how do you use Git LFS? It usually wants a server to expose API endpoints.
-Sure you could use one of the [big](https://bitbucket.org) [hosting](https://github.com)
-[providers](https://gitlab.com), but that makes everything more complicated.
+But how do you use Git LFS? Sure you could use one of the
+[big](https://bitbucket.org) [hosting](https://github.com)
+[providers](https://gitlab.com), but that makes everything more
+complicated.
 
-If you want a git repository that just works and simply sends its
-binary files to an s3 provider, this is what this agent does.
-There are plenty of similar "solutions" out there, but they all seem
-either outdated or too complex (I don't need a running server to send
-a file!).
-
-If you already have plenty of storage sitting on a NAS, Dropbox or
-Google Drive, you might instead want to check out
-[lfs-folderstore](https://github.com/sinbad/lfs-folderstore).
-
+This agent simply sends LFS binary files to an S3 bucket.
 
 ## How to use
 
@@ -122,12 +114,15 @@ when you clone fresh. Here's the sequence:
   share one between many projects. In the former case, it's easier to reclaim
   space by deleting a specific project, in the latter case you can save space if
   you have common files between projects (they'll have the same hash).
-* This would not have been possible in Go (I had a python version)
-  without the work done by Steve Streeting on
-  [lfs-folderstore](https://github.com/sinbad/lfs-folderstore). Thanks
-  to him! The license is therefore also MIT here.
+* This work benefited a lot from
+  [lfs-folderstore](https://github.com/sinbad/lfs-folderstore),
+  thanks! If you already have plenty of storage sitting on a NAS,
+  Dropbox or Google Drive, this might be for you!
 * Upload and download progress report are implemented, but they only
   report for every 5 MB of data. This is currently hardcoded, as it's
   the limit value for my S3 provider. It can be put in an environment
   variable later if necessary.
 * I don't use Windows. Please report issues if you experience them there.
+* Relation to other tools : There are plenty of similar "solutions"
+  out there, but they all seem either outdated or too complex (I don't
+  need a running server to send a file!).
