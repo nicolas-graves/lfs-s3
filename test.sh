@@ -9,10 +9,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENVRC="$1"
-case "$ENVRC" in
-  /*) ;;
-  *) ENVRC="$SCRIPT_DIR/$ENVRC";;
-esac
+[[ $ENVRC != /* ]] && ENVRC="$SCRIPT_DIR/$ENVRC"
 
 # Use a wrapper to see input and output to the program.
 go build &&\
