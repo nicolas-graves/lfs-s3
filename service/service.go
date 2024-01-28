@@ -53,23 +53,11 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 	return
 }
 
-func checkEnvVars(vars []string) error {
-	for _, v := range vars {
-		if value := os.Getenv(v); value == "" {
-			return fmt.Errorf("environment variable %s not defined", v)
-		}
-	}
-	return nil
-}
-
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
-	requiredVars := []string{
-		"S3_BUCKET",
-	}
-
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
 	var s3Client *s3.Client
+	var err error
 
 scanner:
 	for scanner.Scan() {
@@ -82,32 +70,19 @@ scanner:
 
 		switch req.Event {
 		case "init":
-			if err := checkEnvVars(requiredVars); err != nil {
-				errorResp := &api.InitResponse{
-					Error: &api.Error{
-						Code:    1,
-						Message: fmt.Sprintf("Initialization error: %s.", err),
-					},
-				}
-				api.SendResponse(errorResp, writer, stderr)
-				return
-			}
-			if s3Client == nil {
-				var err error
+			if (os.Getenv("S3_BUCKET") == "") {
+				err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
+				api.SendInit(1, err, writer, stderr)
+			} else if (s3Client == nil) {
 				s3Client, err = createS3Client()
 				if err != nil {
-					errorResp := &api.InitResponse{
-						Error: &api.Error{
-							Code:    1,
-							Message: fmt.Sprintf("Initialization error: %s.", err),
-						},
-					}
-					api.SendResponse(errorResp, writer, stderr)
-					return
+					api.SendInit(1, err, writer, stderr)
+				} else {
+					api.SendInit(0, nil, writer, stderr)
 				}
+			} else {
+				api.SendInit(0, nil, writer, stderr)
 			}
-			resp := &api.InitResponse{}
-			api.SendResponse(resp, writer, stderr)
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
 			retrieve(req.Oid, req.Size, writer, stderr, s3Client)

@@ -76,6 +76,20 @@ func SendResponse(r interface{}, writer io.Writer, stderr io.Writer) error {
 	return nil
 }
 
+// SendInit answers to init
+func SendInit(code int, err error, writer io.Writer, stderr io.Writer) {
+	var resp *InitResponse
+	if err != nil {
+		resp = &InitResponse{&Error{code, fmt.Sprintf("Init error: %s\n", err)}}
+	} else {
+		resp = &InitResponse{}
+	}
+	respErr := SendResponse(resp, writer, stderr)
+	if respErr != nil {
+		fmt.Fprintf(stderr, "Unable to send init response: %v\n", respErr)
+	}
+}
+
 // SendTransfer sends a transfer message back to lfs
 func SendTransfer(oid string, code int, err error, path string, writer io.Writer, stderr io.Writer) {
 	var resp *TransferResponse
