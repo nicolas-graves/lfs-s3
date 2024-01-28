@@ -2,29 +2,18 @@
 
 ## What is it?
 
-`lfs-s3` is a tiny (~300 SLOC) [Custom Transfer
-Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
-for [Git LFS](https://git-lfs.github.com/) which allows you to use S3
-as the remote storage location for all your large media files.
-
-## Why?
-
 Let's say you use a simple plain Git repo, without any fancy hosting
-solution. It's simple and great.
-
-But how do you use Git LFS? Sure you could use one of the
+solution. How do you use Git LFS? Sure you could use one of the
 [big](https://bitbucket.org) [hosting](https://github.com)
 [providers](https://gitlab.com), but that makes everything more
 complicated.
 
-This agent simply sends LFS binary files to an S3 bucket.
+`lfs-s3` is a tiny (~300 SLOC) [Custom Transfer
+Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
+for [Git LFS](https://git-lfs.github.com/) which simply sends LFS
+binary files to an S3 bucket.
 
 ## How to use
-
-### Prerequisites
-
-This has been tested with Git LFS 3.3.0. You probably need to be
-running Git LFS version 2.3.0 or later.
 
 ### Download &amp; install
 
@@ -34,31 +23,45 @@ I haven't setup the releases yet, so you'll need to build it from
 source using the standard `go build`. PR Welcome to help me setup
 this.
 
-### Environment variables
-
-All S3 configuration options use environment variables. Only `S3_BUCKET`
-is required.
-
-* `AWS_REGION` - the region where your S3 bucket is.  If not provided
-  the default from AWS SDK is used.
-* `AWS_S3_ENDPOINT` - Your S3 endpoint.  If not provided the default
-  from AWS SDK is used.
-* `S3_BUCKET` - the bucket you wish to use for LFS storage.
-* `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
+### Configuration
 
 The
 [default](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials)
-AWS SDK mechanisms are used for gathering credentials.
+AWS SDK mechanisms are used for gathering credentials (though IAM
+roles are untested yet). Your S3 provider doesn't have to be AWS, most
+providers implement the same API.
 
-Although there is AWS in the environment variables, it should work
-with any S3 provider, given it has the same configuration. I use OVH
-for instance.
+Recommendations :
+1) [Use shared credentials or config files.](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html)
+2) Use environment variables.
+
+You should consider the following environment variables:
+* `S3_BUCKET` - the bucket you wish to use for LFS storage. This
+  variable is required in both cases.
+* `AWS_REGION` - the region where your S3 bucket is.  If not provided
+  the default from AWS SDK is used.
+* `AWS_S3_ENDPOINT` - your S3 endpoint.  If not provided the default
+  from AWS SDK is used.
+* `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
+
+In case you use an [AWS config
+file](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html),
+you should also consider:
+* `AWS_CONFIG_FILE` - in case you want to provide a project-specific config file.
+* `AWS_PROFILE` - if one particular is set in the config file.
+
+In case you use only environment variables, you have to also set:
+* `AWS_ACCESS_KEY_ID`
+* `AWS_SECRET_ACCESS_KEY`
+
+You can use what you want for env variables,
+[direnv](https://github.com/direnv/direnv) is recommended.
+
+### Testing
 
 You can simply test if your S3 provider works with a `.envrc` file
 given as an argument to the test file `test.sh`. Note that this will
 upload a random 1mb binary to your bucket.
-
-You can use what you want for this. I use [direnv](https://github.com/direnv/direnv).
 
 ### Configure a fresh repo
 
@@ -114,6 +117,8 @@ when you clone fresh. Here's the sequence:
 
 ## Notes
 
+* This has been tested with 3.4.0 >= Git LFS >= 3.3.0. Earlier version
+  will not be supported.
 * It's entirely up to you whether you use different S3 buckets per project, or
   share one between many projects. In the former case, it's easier to reclaim
   space by deleting a specific project, in the latter case you can save space if
