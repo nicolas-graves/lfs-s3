@@ -54,12 +54,12 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 }
 
 func checkEnvVars(vars []string) error {
-    for _, v := range vars {
-        if value := os.Getenv(v); value == "" {
-            return fmt.Errorf("environment variable %s not defined", v)
-        }
-    }
-    return nil
+	for _, v := range vars {
+		if value := os.Getenv(v); value == "" {
+			return fmt.Errorf("environment variable %s not defined", v)
+		}
+	}
+	return nil
 }
 
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
