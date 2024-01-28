@@ -26,11 +26,9 @@ echo -e "#!/usr/bin/env sh\n\ntee -a /tmp/git-lfs-test/input.log\
  tee -a /tmp/git-lfs-test/output.log >&1\n" > lfs-s3.sh &&\
 chmod +x lfs-s3.sh &&\
 rm -rf /tmp/git-lfs-test &&\
-mkdir /tmp/git-lfs-test &&\
+mkdir -p /tmp/git-lfs-test/fake-remote-repo &&\
 cd /tmp/git-lfs-test && (
-  mkdir fake-remote-repo && cd fake-remote-repo
-  git init --bare
-  cd ..
+  git init --bare fake-remote-repo &&\
   git clone --progress fake-remote-repo local-repo &&\
     cd local-repo && (
       echo "# This is a lfs-s3 test." > README.md
