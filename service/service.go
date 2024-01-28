@@ -185,14 +185,9 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer, client
 	})
 
 	if err != nil {
-		api.SendTransferError(oid, 1, fmt.Sprintf("Error downloading file: %v\n", err), writer, stderr)
-		return
-	}
-
-	complete := &api.TransferResponse{Event: "complete", Oid: oid, Path: localPath, Error: nil}
-	err = api.SendResponse(complete, writer, stderr)
-	if err != nil {
-		fmt.Fprintf(stderr, "Unable to send completion message: %v\n", err)
+		api.SendTransfer(oid, 1, err, localPath, writer, stderr)
+	} else {
+		api.SendTransfer(oid, 0, nil, localPath, writer, stderr)
 	}
 }
 
@@ -230,13 +225,8 @@ func store(oid string, size int64, writer io.Writer, stderr io.Writer, client *s
 	})
 
 	if err != nil {
-		api.SendTransferError(oid, 1, fmt.Sprintf("Error uploading file: %v\n", err), writer, stderr)
-		return
-	}
-
-	complete := &api.TransferResponse{Event: "complete", Oid: oid, Error: nil}
-	err = api.SendResponse(complete, writer, stderr)
-	if err != nil {
-		fmt.Fprintf(stderr, "Unable to send completion message: %v\n", err)
+		api.SendTransfer(oid, 1, err, "", writer, stderr)
+	} else {
+		api.SendTransfer(oid, 0, nil, "", writer, stderr)
 	}
 }

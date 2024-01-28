@@ -76,12 +76,27 @@ func SendResponse(r interface{}, writer io.Writer, stderr io.Writer) error {
 	return nil
 }
 
-// SendTransferError sends an error back to lfs
-func SendTransferError(oid string, code int, message string, writer io.Writer, stderr io.Writer) {
-	resp := &TransferResponse{"complete", oid, "", &Error{code, message}}
-	err := SendResponse(resp, writer, stderr)
+// SendTransfer sends a transfer message back to lfs
+func SendTransfer(oid string, code int, err error, path string, writer io.Writer, stderr io.Writer) {
+	var resp *TransferResponse
 	if err != nil {
-		fmt.Fprintf(stderr, "Unable to send transfer error: %v\n", err)
+		var message string
+		if path == "" {  // always empty on upload
+			message = fmt.Sprintf("Error uploading file: %v\n", err)
+		} else {
+			message = fmt.Sprintf("Error downloading file: %v\n", err)
+		}
+		resp = &TransferResponse{"complete", oid, "", &Error{code, message}}
+	} else {
+		if path == "" {
+			resp = &TransferResponse{Event: "complete", Oid: oid, Error: nil}
+		} else {
+			resp = &TransferResponse{Event: "complete", Oid: oid, Path: path, Error: nil}
+		}
+	}
+	respErr := SendResponse(resp, writer, stderr)
+	if respErr != nil {
+		fmt.Fprintf(stderr, "Unable to send transfer message: %v\n", respErr)
 	}
 }
 
