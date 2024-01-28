@@ -71,6 +71,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	writer := io.Writer(stdout)
 	var s3Client *s3.Client
 
+scanner:
 	for scanner.Scan() {
 		line := scanner.Text()
 		var req api.Request
@@ -115,7 +116,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 			store(req.Oid, req.Size, writer, stderr, s3Client)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
-			break
+			break scanner
 		}
 	}
 }
