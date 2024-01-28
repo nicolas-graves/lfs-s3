@@ -9,13 +9,14 @@ complicated.
 `lfs-s3` is a tiny (~300 SLOC) [Custom Transfer
 Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
 for [Git LFS](https://git-lfs.github.com/) which simply sends LFS
-binary files to an S3 bucket.
+binary files to an [S3
+bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
 
 ## How to use
 
 ### Download &amp; install
 
-You will need `lfs-s3[.exe]` to be on your system path somewhere.
+You need `lfs-s3[.exe]` to be on your system path somewhere.
 
 I haven't setup the releases yet, so you'll need to build it from
 source using the standard `go build`. PR Welcome to help me setup
