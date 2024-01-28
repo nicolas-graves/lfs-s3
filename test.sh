@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 # This file takes as an argument the .envrc file where variables are defined.
+# Test logs are in the linux /tmp/git-lfs-test directory.
 if [ -z "$1" ]
 then
   echo "Please provide the path to the .envrc file"
@@ -13,11 +14,13 @@ ENVRC="$1"
 
 # Use a wrapper to see input and output to the program.
 go build &&\
-echo -e "#!/usr/bin/env sh\n\ntee -a /tmp/git-lfs-input.log | ${PWD}/lfs-s3 --debug 2> /tmp/git-lfs-error.log | tee -a /tmp/git-lfs-output.log >&1\n" > lfs-s3.sh &&\
+echo -e "#!/usr/bin/env sh\n\ntee -a /tmp/git-lfs-test/input.log\
+ | ${PWD}/lfs-s3 --debug 2> /tmp/git-lfs-test/error.log |\
+ tee -a /tmp/git-lfs-test/output.log >&1\n" > lfs-s3.sh &&\
 chmod +x lfs-s3.sh &&\
-rm -rf test &&\
-mkdir test &&\
-cd test && (
+rm -rf /tmp/git-lfs-test &&\
+mkdir /tmp/git-lfs-test &&\
+cd /tmp/git-lfs-test && (
   mkdir fake-remote-repo && cd fake-remote-repo
   git init --bare
   cd ..
