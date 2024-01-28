@@ -39,7 +39,7 @@ cd /tmp/git-lfs-test && (
       git lfs track "*.bin"
       git add .gitattributes
       git commit -m "Adding .gitattributes"
-      git config --add lfs.customtransfer.lfs-s3.path ../../lfs-s3.sh
+      git config --add lfs.customtransfer.lfs-s3.path "$SCRIPT_DIR/lfs-s3.sh"
       git config --add lfs.standalonetransferagent lfs-s3
       git config --add lfs.concurrenttransfers 2
       dd if=/dev/urandom of=blob1.bin bs=1024 count=1024
@@ -53,7 +53,7 @@ cd /tmp/git-lfs-test && (
   git clone --progress fake-remote-repo local-repo-dup &&\
     cd local-repo-dup && (
       git lfs install --local
-      git config --add lfs.customtransfer.lfs-s3.path ../../lfs-s3.sh
+      git config --add lfs.customtransfer.lfs-s3.path "$SCRIPT_DIR/lfs-s3.sh"
       git config --add lfs.standalonetransferagent lfs-s3
       git config --add lfs.concurrenttransfers 2
       source "$ENVRC"
