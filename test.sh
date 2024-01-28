@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 go build &&\
 echo -e "#!/usr/bin/env sh\n\ntee -a /tmp/git-lfs-test/input.log\
  | ${PWD}/lfs-s3 --debug 2> /tmp/git-lfs-test/error.log |\
- tee -a /tmp/git-lfs-test/output.log >&1\n" > lfs-s3.sh &&\
+ tee -a /tmp/git-lfs-test/output.log >&1\n" > "$SCRIPT_DIR/lfs-s3.sh" &&\
 chmod +x lfs-s3.sh &&\
 rm -rf /tmp/git-lfs-test &&\
 mkdir -p /tmp/git-lfs-test/fake-remote-repo &&\
