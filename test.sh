@@ -1,15 +1,22 @@
 #!/usr/bin/env sh
 
-# This file takes as an argument the .envrc file where variables are defined.
+# This file takes as an argument the .envrc file where variables are
+# defined. It can be ommited if it is in the current directory.
+
 # Test logs are in the linux /tmp/git-lfs-test directory.
-if [ -z "$1" ]
-then
+
+if [ -z "$1" ]; then
+  if [ -f .envrc ]; then
+    ENVRC=".envrc"
+  else
   echo "Please provide the path to the .envrc file"
   exit 1
+  fi
+else
+  ENVRC="$1"
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ENVRC="$1"
 [[ $ENVRC != /* ]] && ENVRC="$SCRIPT_DIR/$ENVRC"
 
 # Use a wrapper to see input and output to the program.
