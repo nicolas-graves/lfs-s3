@@ -126,13 +126,15 @@ func createS3Client() (*s3.Client, error) {
 	endpointURL := os.Getenv("AWS_S3_ENDPOINT")
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithEndpointResolver(aws.EndpointResolverFunc(
-			func(service, _ string) (aws.Endpoint, error) {
+		config.WithSharedConfigProfile(os.Getenv("AWS_PROFILE")),
+		config.WithRegion(region),
+		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 				if (endpointURL == "" || region == "") {
 					// fallback to default endpoint configuration
 					return aws.Endpoint{}, &aws.EndpointNotFoundError{}
 				} else {
-					return aws.Endpoint{URL: endpointURL, SigningRegion: region}, nil
+					return aws.Endpoint{URL: endpointURL}, nil
 				}
 			})),
 	)
