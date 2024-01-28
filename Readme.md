@@ -1,8 +1,6 @@
 # Git LFS: S3 agent
 
-## What is it?
-
-Let's say you use a simple plain Git repo, without any fancy hosting
+Let's say you use a simple Git repo, without any fancy hosting
 solution. How do you use Git LFS? Sure you could use one of the
 [big](https://bitbucket.org) [hosting](https://github.com)
 [providers](https://gitlab.com), but that makes everything more
@@ -31,11 +29,7 @@ AWS SDK mechanisms are used for gathering credentials (though IAM
 roles are untested yet). Your S3 provider doesn't have to be AWS, most
 providers implement the same API.
 
-Recommendations :
-1) [Use shared credentials or config files.](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html)
-2) Use environment variables.
-
-You should consider the following environment variables:
+You should consider setting the following environment variables:
 * `S3_BUCKET` - the bucket you wish to use for LFS storage. This
   variable is required in both cases.
 * `AWS_REGION` - the region where your S3 bucket is.  If not provided
@@ -44,17 +38,16 @@ You should consider the following environment variables:
   from AWS SDK is used.
 * `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
 
-In case you use an [AWS config
-file](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html),
-you should also consider:
+Recommendations :
+1) [Use shared credentials or config files](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html). In this case, you should also consider:
 * `AWS_CONFIG_FILE` - in case you want to provide a project-specific config file.
 * `AWS_PROFILE` - if one particular is set in the config file.
 
-In case you use only environment variables, you have to also set:
+2) Use only environment variables. In this case, you have to also set:
 * `AWS_ACCESS_KEY_ID`
 * `AWS_SECRET_ACCESS_KEY`
 
-You can use what you want for env variables,
+Some tools are available to manage environment variables seamlessly,
 [direnv](https://github.com/direnv/direnv) is recommended.
 
 ### Testing
