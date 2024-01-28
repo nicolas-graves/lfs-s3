@@ -69,6 +69,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
+	var s3Client *s3.Client
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -90,14 +91,28 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 				api.SendResponse(errorResp, writer, stderr)
 				return
 			}
+			if s3Client == nil {
+				var err error
+				s3Client, err = createS3Client()
+				if err != nil {
+					errorResp := &api.InitResponse{
+						Error: &api.Error{
+							Code:    1,
+							Message: fmt.Sprintf("Initialization error: %s.", err),
+						},
+					}
+					api.SendResponse(errorResp, writer, stderr)
+					return
+				}
+			}
 			resp := &api.InitResponse{}
 			api.SendResponse(resp, writer, stderr)
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			retrieve(req.Oid, req.Size, writer, stderr)
+			retrieve(req.Oid, req.Size, writer, stderr, s3Client)
 		case "upload":
 			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			store(req.Oid, req.Size, writer, stderr)
+			store(req.Oid, req.Size, writer, stderr, s3Client)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break
@@ -105,11 +120,11 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	}
 }
 
-func createS3Client() *s3.Client {
+func createS3Client() (*s3.Client, error) {
 	region := os.Getenv("AWS_REGION")
 	endpointURL := os.Getenv("AWS_S3_ENDPOINT")
 
-	cfg, _ := config.LoadDefaultConfig(context.TODO(),
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithEndpointResolver(aws.EndpointResolverFunc(
 			func(service, _ string) (aws.Endpoint, error) {
 				if (endpointURL == "" || region == "") {
@@ -120,6 +135,9 @@ func createS3Client() *s3.Client {
 				}
 			})),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %v", err)
+	}
 
 	return s3.NewFromConfig(cfg, func(o *s3.Options) {
 		usePathStyle, err := strconv.ParseBool(os.Getenv("S3_USEPATHSTYLE"))
@@ -127,11 +145,10 @@ func createS3Client() *s3.Client {
 			usePathStyle = false
 		}
 		o.UsePathStyle = usePathStyle
-	})
+	}), nil
 }
 
-func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
-	client := createS3Client()
+func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer, client *s3.Client) {
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
@@ -176,8 +193,7 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer) {
 	}
 }
 
-func store(oid string, size int64, writer io.Writer, stderr io.Writer) {
-	client := createS3Client()
+func store(oid string, size int64, writer io.Writer, stderr io.Writer, client *s3.Client) {
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
