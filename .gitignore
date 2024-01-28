@@ -2,3 +2,4 @@ test
 lfs-s3
 lfs-s3.sh
 .envrc
+.aws-config
