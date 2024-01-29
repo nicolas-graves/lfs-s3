@@ -58,13 +58,11 @@ type TransferOptions struct {
 	S3Bucket       string
 	S3CDN          string
 	ProgressTracker *progressTracker
-	LocalPath      string
 }
 
 func (to *TransferOptions) updateFromRequest(req *api.Request) {
 	to.ProgressTracker.Oid = req.Oid
 	to.ProgressTracker.TotalSize = req.Size
-	to.LocalPath = fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
 }
 
 type eventHandler func(*TransferOptions, api.Request)
@@ -87,7 +85,6 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 			RespWriter: writer,
 			ErrWriter:  stderr,
 		},
-		LocalPath: "",
 	}
 
 	for scanner.Scan() {
@@ -154,8 +151,9 @@ func handleInit(options *TransferOptions, req api.Request) {
 
 func handleDownload(options *TransferOptions, req api.Request) {
 	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received download request for %s\n", req.Oid)
+	localPath := fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
 	options.updateFromRequest(&req)
-	file, err := os.Create(options.LocalPath)
+	file, err := os.Create(localPath)
 	if err != nil {
 		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error creating file: %v\n", err)
 		return
@@ -178,16 +176,17 @@ func handleDownload(options *TransferOptions, req api.Request) {
 	})
 
 	if err != nil {
-		api.SendTransfer(options.ProgressTracker.Oid, 1, err, options.LocalPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(options.ProgressTracker.Oid, 1, err, localPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, options.LocalPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, localPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	}
 }
 
 func handleUpload(options *TransferOptions, req api.Request) {
 	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received upload request for %s\n", req.Oid)
+	localPath := fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
 	options.updateFromRequest(&req)
-	file, err := os.Open(options.LocalPath)
+	file, err := os.Open(localPath)
 	if err != nil {
 		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error opening file: %v\n", err)
 		return
