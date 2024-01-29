@@ -26,8 +26,8 @@ func (waw *writerAtWrapper) WriteAt(p []byte, off int64) (n int, err error) {
 }
 
 type progressTracker struct {
-	Reader         io.Reader
-	Writer         io.WriterAt
+	Reader         io.Reader  // only used in store
+	Writer         io.WriterAt  // only used in retrieve
 	Oid            string
 	TotalSize      int64
 	RespWriter     io.Writer
@@ -53,12 +53,29 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 	return
 }
 
+type TransferOptions struct {
+	S3Client       *s3.Client
+	S3Bucket       string
+	S3CDN          string
+	ProgressTracker *progressTracker
+	LocalPath      string
+}
+
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
-	bucket := os.Getenv("S3_BUCKET")
-	var s3Client *s3.Client
 	var err error
+
+	transferOptions := TransferOptions{
+		S3Client: nil,
+		S3Bucket: os.Getenv("S3_BUCKET"),
+		S3CDN:    os.Getenv("S3_BUCKET_CDN"),
+		ProgressTracker: &progressTracker{
+			RespWriter: writer,
+			ErrWriter:  stderr,
+		},
+		LocalPath: "",
+	}
 
 scanner:
 	for scanner.Scan() {
@@ -71,11 +88,13 @@ scanner:
 
 		switch req.Event {
 		case "init":
-			if (bucket == "") {
+			if (transferOptions.S3Bucket == "") {
 				err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
 				api.SendInit(1, err, writer, stderr)
-			} else if (s3Client == nil) {
-				s3Client, err = createS3Client()
+			} else if ((req.Operation == "upload" || transferOptions.S3CDN == "") &&
+				transferOptions.S3Client == nil) {
+				// s3Client doesn't need to be defined in case S3_BUCKET_CDN is.
+				transferOptions.S3Client, err = createS3Client()
 				if err != nil {
 					api.SendInit(1, err, writer, stderr)
 				} else {
@@ -86,10 +105,16 @@ scanner:
 			}
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			retrieve(s3Client, bucket, req.Oid, req.Size, writer, stderr)
+			transferOptions.ProgressTracker.Oid = req.Oid
+			transferOptions.ProgressTracker.TotalSize = req.Size
+			transferOptions.LocalPath = ".git/lfs/objects/" + req.Oid[:2] + "/" + req.Oid[2:4] + "/" + req.Oid
+			retrieve(transferOptions)
 		case "upload":
 			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			store(s3Client, bucket, req.Oid, req.Size, writer, stderr)
+			transferOptions.ProgressTracker.Oid = req.Oid
+			transferOptions.ProgressTracker.TotalSize = req.Size
+			transferOptions.LocalPath = ".git/lfs/objects/" + req.Oid[:2] + "/" + req.Oid[2:4] + "/" + req.Oid
+			store(transferOptions)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break scanner
@@ -127,11 +152,10 @@ func createS3Client() (*s3.Client, error) {
 	}), nil
 }
 
-func retrieve(client *s3.Client, bucket string, oid string, size int64, writer io.Writer, stderr io.Writer) {
-	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
-	file, err := os.Create(localPath)
+func retrieve(options TransferOptions) {
+	file, err := os.Create(options.LocalPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error creating file: %v\n", err)
+		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error creating file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -139,37 +163,29 @@ func retrieve(client *s3.Client, bucket string, oid string, size int64, writer i
 		file.Close()
 	}()
 
-	waw := &writerAtWrapper{file}
-	progressWriter := &progressTracker{
-		Writer:     waw,
-		Oid:        oid,
-		TotalSize:  size,
-		RespWriter: writer,
-		ErrWriter:  stderr,
-	}
+	options.ProgressTracker.Writer = &writerAtWrapper{file}
 
-	downloader := manager.NewDownloader(client, func(d *manager.Downloader) {
+	downloader := manager.NewDownloader(options.S3Client, func(d *manager.Downloader) {
 		d.PartSize = 5 * 1024 * 1024 // 1 MB part size
 		d.Concurrency = 1            // Concurrent downloads
 	})
 
-	_, err = downloader.Download(context.Background(), progressWriter, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(oid),
+	_, err = downloader.Download(context.Background(), options.ProgressTracker, &s3.GetObjectInput{
+		Bucket: aws.String(options.S3Bucket),
+		Key:    aws.String(options.ProgressTracker.Oid),
 	})
 
 	if err != nil {
-		api.SendTransfer(oid, 1, err, localPath, writer, stderr)
+		api.SendTransfer(options.ProgressTracker.Oid, 1, err, options.LocalPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(oid, 0, nil, localPath, writer, stderr)
+		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, options.LocalPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	}
 }
 
-func store(client *s3.Client, bucket string, oid string, size int64, writer io.Writer, stderr io.Writer) {
-	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
-	file, err := os.Open(localPath)
+func store(options TransferOptions) {
+	file, err := os.Open(options.LocalPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error opening file: %v\n", err)
+		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error opening file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -177,28 +193,22 @@ func store(client *s3.Client, bucket string, oid string, size int64, writer io.W
 		file.Close()
 	}()
 
-	uploader := manager.NewUploader(client, func(u *manager.Uploader) {
+	uploader := manager.NewUploader(options.S3Client, func(u *manager.Uploader) {
 		u.PartSize = 5 * 1024 * 1024 // 1 MB part size
 		// u.LeavePartsOnError = true        // Keep uploaded parts on error
 	})
 
-	progressReader := &progressTracker{
-		Reader:     file,
-		Oid:        oid,
-		TotalSize:  size,
-		RespWriter: writer,
-		ErrWriter:  stderr,
-	}
+	options.ProgressTracker.Reader = file
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(oid),
-		Body:   progressReader,
+		Bucket: aws.String(options.S3Bucket),
+		Key:    aws.String(options.ProgressTracker.Oid),
+		Body:   options.ProgressTracker,
 	})
 
 	if err != nil {
-		api.SendTransfer(oid, 1, err, "", writer, stderr)
+		api.SendTransfer(options.ProgressTracker.Oid, 1, err, "", options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(oid, 0, nil, "", writer, stderr)
+		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, "", options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	}
 }
