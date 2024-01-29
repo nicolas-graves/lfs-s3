@@ -85,10 +85,10 @@ scanner:
 			}
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			retrieve(req.Oid, req.Size, writer, stderr, s3Client)
+			retrieve(s3Client, req.Oid, req.Size, writer, stderr)
 		case "upload":
 			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			store(req.Oid, req.Size, writer, stderr, s3Client)
+			store(s3Client, req.Oid, req.Size, writer, stderr)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break scanner
@@ -126,7 +126,7 @@ func createS3Client() (*s3.Client, error) {
 	}), nil
 }
 
-func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer, client *s3.Client) {
+func retrieve(client *s3.Client, oid string, size int64, writer io.Writer, stderr io.Writer) {
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
@@ -166,7 +166,7 @@ func retrieve(oid string, size int64, writer io.Writer, stderr io.Writer, client
 	}
 }
 
-func store(oid string, size int64, writer io.Writer, stderr io.Writer, client *s3.Client) {
+func store(client *s3.Client, oid string, size int64, writer io.Writer, stderr io.Writer) {
 	bucketName := os.Getenv("S3_BUCKET")
 
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
