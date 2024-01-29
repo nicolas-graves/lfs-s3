@@ -164,7 +164,7 @@ func handleDownload(S3 *S3Options, req api.Request) {
 		file.Close()
 	}()
 
-	if S3.CDN == "" {
+	if S3.CDN != "" {
 		// Get File
 		resp, err := http.Get(S3.CDN + "/" + req.Oid)
 		if err != nil {
