@@ -61,6 +61,12 @@ type TransferOptions struct {
 	LocalPath      string
 }
 
+func (to *TransferOptions) updateFromRequest(req *api.Request) {
+	to.ProgressTracker.Oid = req.Oid
+	to.ProgressTracker.TotalSize = req.Size
+	to.LocalPath = fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
+}
+
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
@@ -105,15 +111,11 @@ scanner:
 			}
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			transferOptions.ProgressTracker.Oid = req.Oid
-			transferOptions.ProgressTracker.TotalSize = req.Size
-			transferOptions.LocalPath = ".git/lfs/objects/" + req.Oid[:2] + "/" + req.Oid[2:4] + "/" + req.Oid
+			transferOptions.updateFromRequest(&req)
 			retrieve(transferOptions)
 		case "upload":
 			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			transferOptions.ProgressTracker.Oid = req.Oid
-			transferOptions.ProgressTracker.TotalSize = req.Size
-			transferOptions.LocalPath = ".git/lfs/objects/" + req.Oid[:2] + "/" + req.Oid[2:4] + "/" + req.Oid
+			transferOptions.updateFromRequest(&req)
 			store(transferOptions)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
