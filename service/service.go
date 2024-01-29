@@ -67,11 +67,18 @@ func (to *TransferOptions) updateFromRequest(req *api.Request) {
 	to.LocalPath = fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
 }
 
+type eventHandler func(*TransferOptions, api.Request)
+
+var eventHandlers = map[string]eventHandler{
+	"init":     handleInit,
+	"download": handleDownload,
+	"upload":   handleUpload,
+	"terminate": handleTerminate,
+}
+
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
-	var err error
-
 	transferOptions := TransferOptions{
 		S3Client: nil,
 		S3Bucket: os.Getenv("S3_BUCKET"),
@@ -83,7 +90,6 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 		LocalPath: "",
 	}
 
-scanner:
 	for scanner.Scan() {
 		line := scanner.Text()
 		var req api.Request
@@ -91,35 +97,10 @@ scanner:
 			fmt.Fprintf(stderr, "Error reading input: %s\n", err)
 			return
 		}
-
-		switch req.Event {
-		case "init":
-			if (transferOptions.S3Bucket == "") {
-				err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
-				api.SendInit(1, err, writer, stderr)
-			} else if ((req.Operation == "upload" || transferOptions.S3CDN == "") &&
-				transferOptions.S3Client == nil) {
-				// s3Client doesn't need to be defined in case S3_BUCKET_CDN is.
-				transferOptions.S3Client, err = createS3Client()
-				if err != nil {
-					api.SendInit(1, err, writer, stderr)
-				} else {
-					api.SendInit(0, nil, writer, stderr)
-				}
-			} else {
-				api.SendInit(0, nil, writer, stderr)
-			}
-		case "download":
-			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			transferOptions.updateFromRequest(&req)
-			retrieve(transferOptions)
-		case "upload":
-			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			transferOptions.updateFromRequest(&req)
-			store(transferOptions)
-		case "terminate":
-			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
-			break scanner
+		if handler, ok := eventHandlers[req.Event]; ok {
+			handler(&transferOptions, req)
+		} else {
+			fmt.Fprintf(stderr, "Unknown event: %s\n", req.Event)
 		}
 	}
 }
@@ -154,7 +135,26 @@ func createS3Client() (*s3.Client, error) {
 	}), nil
 }
 
-func retrieve(options TransferOptions) {
+func handleInit(options *TransferOptions, req api.Request) {
+	var err error
+	if options.S3Bucket == "" {
+		err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
+		api.SendInit(1, err, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+	} else if options.S3Client == nil {
+		options.S3Client, err = createS3Client()
+		if err != nil {
+			api.SendInit(1, err, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		} else {
+			api.SendInit(0, nil, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		}
+	} else {
+		api.SendInit(0, nil, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+	}
+}
+
+func handleDownload(options *TransferOptions, req api.Request) {
+	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received download request for %s\n", req.Oid)
+	options.updateFromRequest(&req)
 	file, err := os.Create(options.LocalPath)
 	if err != nil {
 		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error creating file: %v\n", err)
@@ -184,7 +184,9 @@ func retrieve(options TransferOptions) {
 	}
 }
 
-func store(options TransferOptions) {
+func handleUpload(options *TransferOptions, req api.Request) {
+	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received upload request for %s\n", req.Oid)
+	options.updateFromRequest(&req)
 	file, err := os.Open(options.LocalPath)
 	if err != nil {
 		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error opening file: %v\n", err)
@@ -213,4 +215,9 @@ func store(options TransferOptions) {
 	} else {
 		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, "", options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
 	}
+}
+
+func handleTerminate(options *TransferOptions, req api.Request) {
+	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Terminating test custom adapter gracefully.\n")
+	return  // Exiting the scanner loop
 }
