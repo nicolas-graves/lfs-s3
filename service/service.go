@@ -56,6 +56,7 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
+	bucket := os.Getenv("S3_BUCKET")
 	var s3Client *s3.Client
 	var err error
 
@@ -70,7 +71,7 @@ scanner:
 
 		switch req.Event {
 		case "init":
-			if (os.Getenv("S3_BUCKET") == "") {
+			if (bucket == "") {
 				err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
 				api.SendInit(1, err, writer, stderr)
 			} else if (s3Client == nil) {
@@ -85,10 +86,10 @@ scanner:
 			}
 		case "download":
 			fmt.Fprintf(stderr, "Received download request for %s\n", req.Oid)
-			retrieve(s3Client, req.Oid, req.Size, writer, stderr)
+			retrieve(s3Client, bucket, req.Oid, req.Size, writer, stderr)
 		case "upload":
 			fmt.Fprintf(stderr, "Received upload request for %s\n", req.Oid)
-			store(s3Client, req.Oid, req.Size, writer, stderr)
+			store(s3Client, bucket, req.Oid, req.Size, writer, stderr)
 		case "terminate":
 			fmt.Fprintf(stderr, "Terminating test custom adapter gracefully.\n")
 			break scanner
@@ -126,9 +127,7 @@ func createS3Client() (*s3.Client, error) {
 	}), nil
 }
 
-func retrieve(client *s3.Client, oid string, size int64, writer io.Writer, stderr io.Writer) {
-	bucketName := os.Getenv("S3_BUCKET")
-
+func retrieve(client *s3.Client, bucket string, oid string, size int64, writer io.Writer, stderr io.Writer) {
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Create(localPath)
 	if err != nil {
@@ -155,7 +154,7 @@ func retrieve(client *s3.Client, oid string, size int64, writer io.Writer, stder
 	})
 
 	_, err = downloader.Download(context.Background(), progressWriter, &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
+		Bucket: aws.String(bucket),
 		Key:    aws.String(oid),
 	})
 
@@ -166,9 +165,7 @@ func retrieve(client *s3.Client, oid string, size int64, writer io.Writer, stder
 	}
 }
 
-func store(client *s3.Client, oid string, size int64, writer io.Writer, stderr io.Writer) {
-	bucketName := os.Getenv("S3_BUCKET")
-
+func store(client *s3.Client, bucket string, oid string, size int64, writer io.Writer, stderr io.Writer) {
 	localPath := ".git/lfs/objects/" + oid[:2] + "/" + oid[2:4] + "/" + oid
 	file, err := os.Open(localPath)
 	if err != nil {
@@ -194,7 +191,7 @@ func store(client *s3.Client, oid string, size int64, writer io.Writer, stderr i
 	}
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(bucketName),
+		Bucket: aws.String(bucket),
 		Key:    aws.String(oid),
 		Body:   progressReader,
 	})
