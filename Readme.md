@@ -38,6 +38,7 @@ You should consider setting the following environment variables:
 * `AWS_S3_ENDPOINT` - your S3 endpoint.  If not provided the default
   from AWS SDK is used.
 * `S3_USEPATHSTYLE` - boolean to set the S3 option [usePathStyle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/dual-stack-endpoints.html#dual-stack-endpoints-description).
+* `S3_BUCKET_CDN` - in case you use a [CDN](https://aws.amazon.com/what-is/cdn) to improve download speed.
 
 Recommendations :
 1) [Use shared credentials or config files](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html). In this case, you should also consider:

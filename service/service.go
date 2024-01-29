@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -163,22 +164,39 @@ func handleDownload(S3 *S3Options, req api.Request) {
 		file.Close()
 	}()
 
-	S3.ProgressTracker.Writer = &writerAtWrapper{file}
+	if S3.CDN == "" {
+		// Get File
+		resp, err := http.Get(S3.CDN + "/" + req.Oid)
+		if err != nil {
+			fmt.Fprintf(S3.ProgressTracker.ErrWriter, fmt.Sprintf("Error downloading file: %v\n", err))
+			return
+		}
+		defer resp.Body.Close()
 
-	downloader := manager.NewDownloader(S3.Client, func(d *manager.Downloader) {
-		d.PartSize = 5 * 1024 * 1024 // 1 MB part size
-		d.Concurrency = 1            // Concurrent downloads
-	})
+		// Write File
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			fmt.Fprintf(S3.ProgressTracker.ErrWriter, fmt.Sprintf("Error writing file: %v\n", err))
+			return
+		}
+	} else {
+		S3.ProgressTracker.Writer = &writerAtWrapper{file}
 
-	_, err = downloader.Download(context.Background(), S3.ProgressTracker, &s3.GetObjectInput{
-		Bucket: aws.String(S3.Bucket),
-		Key:    aws.String(S3.ProgressTracker.Oid),
-	})
+		downloader := manager.NewDownloader(S3.Client, func(d *manager.Downloader) {
+			d.PartSize = 5 * 1024 * 1024 // 1 MB part size
+			d.Concurrency = 1            // Concurrent downloads
+		})
+
+		_, err = downloader.Download(context.Background(), S3.ProgressTracker, &s3.GetObjectInput{
+			Bucket: aws.String(S3.Bucket),
+			Key:    aws.String(req.Oid),
+		})
+	}
 
 	if err != nil {
-		api.SendTransfer(S3.ProgressTracker.Oid, 1, err, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
+		api.SendTransfer(req.Oid, 1, err, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(S3.ProgressTracker.Oid, 0, nil, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
+		api.SendTransfer(req.Oid, 0, nil, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	}
 }
 
@@ -205,14 +223,14 @@ func handleUpload(S3 *S3Options, req api.Request) {
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(S3.Bucket),
-		Key:    aws.String(S3.ProgressTracker.Oid),
+		Key:    aws.String(req.Oid),
 		Body:   S3.ProgressTracker,
 	})
 
 	if err != nil {
-		api.SendTransfer(S3.ProgressTracker.Oid, 1, err, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
+		api.SendTransfer(req.Oid, 1, err, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(S3.ProgressTracker.Oid, 0, nil, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
+		api.SendTransfer(req.Oid, 0, nil, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	}
 }
 
