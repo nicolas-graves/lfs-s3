@@ -53,19 +53,19 @@ func (rw *progressTracker) WriteAt(p []byte, off int64) (n int, err error) {
 	return
 }
 
-type TransferOptions struct {
-	S3Client       *s3.Client
-	S3Bucket       string
-	S3CDN          string
+type S3Options struct {
+	Client       *s3.Client
+	Bucket       string
+	CDN          string
 	ProgressTracker *progressTracker
 }
 
-func (to *TransferOptions) updateFromRequest(req *api.Request) {
-	to.ProgressTracker.Oid = req.Oid
-	to.ProgressTracker.TotalSize = req.Size
+func (S3 *S3Options) updateFromRequest(req *api.Request) {
+	S3.ProgressTracker.Oid = req.Oid
+	S3.ProgressTracker.TotalSize = req.Size
 }
 
-type eventHandler func(*TransferOptions, api.Request)
+type eventHandler func(*S3Options, api.Request)
 
 var eventHandlers = map[string]eventHandler{
 	"init":     handleInit,
@@ -77,10 +77,10 @@ var eventHandlers = map[string]eventHandler{
 func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 	scanner := bufio.NewScanner(stdin)
 	writer := io.Writer(stdout)
-	transferOptions := TransferOptions{
-		S3Client: nil,
-		S3Bucket: os.Getenv("S3_BUCKET"),
-		S3CDN:    os.Getenv("S3_BUCKET_CDN"),
+	s3Options := S3Options{
+		Client: nil,
+		Bucket: os.Getenv("S3_BUCKET"),
+		CDN:    os.Getenv("S3_BUCKET_CDN"),
 		ProgressTracker: &progressTracker{
 			RespWriter: writer,
 			ErrWriter:  stderr,
@@ -95,7 +95,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer) {
 			return
 		}
 		if handler, ok := eventHandlers[req.Event]; ok {
-			handler(&transferOptions, req)
+			handler(&s3Options, req)
 		} else {
 			fmt.Fprintf(stderr, "Unknown event: %s\n", req.Event)
 		}
@@ -132,30 +132,30 @@ func createS3Client() (*s3.Client, error) {
 	}), nil
 }
 
-func handleInit(options *TransferOptions, req api.Request) {
+func handleInit(S3 *S3Options, req api.Request) {
 	var err error
-	if options.S3Bucket == "" {
+	if S3.Bucket == "" {
 		err = fmt.Errorf("environment variable S3_BUCKET must be defined!")
-		api.SendInit(1, err, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
-	} else if options.S3Client == nil {
-		options.S3Client, err = createS3Client()
+		api.SendInit(1, err, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
+	} else if S3.Client == nil {
+		S3.Client, err = createS3Client()
 		if err != nil {
-			api.SendInit(1, err, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+			api.SendInit(1, err, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 		} else {
-			api.SendInit(0, nil, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+			api.SendInit(0, nil, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 		}
 	} else {
-		api.SendInit(0, nil, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendInit(0, nil, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	}
 }
 
-func handleDownload(options *TransferOptions, req api.Request) {
-	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received download request for %s\n", req.Oid)
+func handleDownload(S3 *S3Options, req api.Request) {
+	fmt.Fprintf(S3.ProgressTracker.ErrWriter, "Received download request for %s\n", req.Oid)
 	localPath := fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
-	options.updateFromRequest(&req)
+	S3.updateFromRequest(&req)
 	file, err := os.Create(localPath)
 	if err != nil {
-		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error creating file: %v\n", err)
+		fmt.Fprintf(S3.ProgressTracker.ErrWriter, "Error creating file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -163,32 +163,32 @@ func handleDownload(options *TransferOptions, req api.Request) {
 		file.Close()
 	}()
 
-	options.ProgressTracker.Writer = &writerAtWrapper{file}
+	S3.ProgressTracker.Writer = &writerAtWrapper{file}
 
-	downloader := manager.NewDownloader(options.S3Client, func(d *manager.Downloader) {
+	downloader := manager.NewDownloader(S3.Client, func(d *manager.Downloader) {
 		d.PartSize = 5 * 1024 * 1024 // 1 MB part size
 		d.Concurrency = 1            // Concurrent downloads
 	})
 
-	_, err = downloader.Download(context.Background(), options.ProgressTracker, &s3.GetObjectInput{
-		Bucket: aws.String(options.S3Bucket),
-		Key:    aws.String(options.ProgressTracker.Oid),
+	_, err = downloader.Download(context.Background(), S3.ProgressTracker, &s3.GetObjectInput{
+		Bucket: aws.String(S3.Bucket),
+		Key:    aws.String(S3.ProgressTracker.Oid),
 	})
 
 	if err != nil {
-		api.SendTransfer(options.ProgressTracker.Oid, 1, err, localPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(S3.ProgressTracker.Oid, 1, err, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, localPath, options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(S3.ProgressTracker.Oid, 0, nil, localPath, S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	}
 }
 
-func handleUpload(options *TransferOptions, req api.Request) {
-	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Received upload request for %s\n", req.Oid)
+func handleUpload(S3 *S3Options, req api.Request) {
+	fmt.Fprintf(S3.ProgressTracker.ErrWriter, "Received upload request for %s\n", req.Oid)
 	localPath := fmt.Sprintf(".git/lfs/objects/%s/%s/%s", req.Oid[:2], req.Oid[2:4], req.Oid)
-	options.updateFromRequest(&req)
+	S3.updateFromRequest(&req)
 	file, err := os.Open(localPath)
 	if err != nil {
-		fmt.Fprintf(options.ProgressTracker.ErrWriter, "Error opening file: %v\n", err)
+		fmt.Fprintf(S3.ProgressTracker.ErrWriter, "Error opening file: %v\n", err)
 		return
 	}
 	defer func() {
@@ -196,27 +196,27 @@ func handleUpload(options *TransferOptions, req api.Request) {
 		file.Close()
 	}()
 
-	uploader := manager.NewUploader(options.S3Client, func(u *manager.Uploader) {
+	uploader := manager.NewUploader(S3.Client, func(u *manager.Uploader) {
 		u.PartSize = 5 * 1024 * 1024 // 1 MB part size
 		// u.LeavePartsOnError = true        // Keep uploaded parts on error
 	})
 
-	options.ProgressTracker.Reader = file
+	S3.ProgressTracker.Reader = file
 
 	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String(options.S3Bucket),
-		Key:    aws.String(options.ProgressTracker.Oid),
-		Body:   options.ProgressTracker,
+		Bucket: aws.String(S3.Bucket),
+		Key:    aws.String(S3.ProgressTracker.Oid),
+		Body:   S3.ProgressTracker,
 	})
 
 	if err != nil {
-		api.SendTransfer(options.ProgressTracker.Oid, 1, err, "", options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(S3.ProgressTracker.Oid, 1, err, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	} else {
-		api.SendTransfer(options.ProgressTracker.Oid, 0, nil, "", options.ProgressTracker.RespWriter, options.ProgressTracker.ErrWriter)
+		api.SendTransfer(S3.ProgressTracker.Oid, 0, nil, "", S3.ProgressTracker.RespWriter, S3.ProgressTracker.ErrWriter)
 	}
 }
 
-func handleTerminate(options *TransferOptions, req api.Request) {
-	fmt.Fprintf(options.ProgressTracker.ErrWriter, "Terminating test custom adapter gracefully.\n")
+func handleTerminate(S3 *S3Options, req api.Request) {
+	fmt.Fprintf(S3.ProgressTracker.ErrWriter, "Terminating test custom adapter gracefully.\n")
 	return  // Exiting the scanner loop
 }
