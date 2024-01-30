@@ -120,8 +120,7 @@ when you clone fresh. Here's the sequence:
   you have common files between projects (they'll have the same hash).
 * This work benefited a lot from
   [lfs-folderstore](https://github.com/sinbad/lfs-folderstore),
-  thanks! If you already have plenty of storage sitting on a NAS,
-  Dropbox or Google Drive, this might be for you!
+  thanks!
 * Upload and download progress report are implemented, but they only
   report for every 5 MB of data. This is currently hardcoded, as it's
   the limit value for my S3 provider. It can be put in an environment
