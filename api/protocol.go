@@ -6,6 +6,10 @@ import (
 	"io"
 )
 
+// The protocol aims to be a suitable implementation of
+// https://github.com/git-lfs/git-lfs/blob/main/docs/custom-transfers.md,
+// nothing more, nothing less.
+
 // Header struct
 type Header struct {
 	Key   string `json:"key"`
