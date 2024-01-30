@@ -125,7 +125,11 @@ when you clone fresh. Here's the sequence:
   report for every 5 MB of data. This is currently hardcoded, as it's
   the limit value for my S3 provider. It can be put in an environment
   variable later if necessary.
-* I don't use Windows. Please report issues if you experience them there.
-* Relation to other tools : There are plenty of similar "solutions"
+* Relation to other tools : There were plenty of similar "solutions"
   out there, but they all seem either outdated or too complex (I don't
-  need a running server to send a file!).
+  need a running server to send a file!). Seems that this work
+  influenced a few alternatives, namely
+  https://github.com/hacksadecimal/lfs-os then
+  https://github.com/regen100/lfs-dal . `lfs-dal` is very promising
+  and will probably be recommended instead of this project in a near
+  future.
