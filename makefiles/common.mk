@@ -1,8 +1,7 @@
 
 PROJECT=lfs-s3
 GO_FILE=$(shell find . -type f -name "*.go")
-TAG=0.2.0
-##TAG=$(shell git describe --tags | sed 's|^v||' | sed 's|\(\.*\)-.*|\1|')
+TAG=$(shell git describe --tags | sed 's|^v||' | sed 's|\(\.*\)-.*|\1|')
 COMPILE_COMMAND=go build -ldflags="-X main.Version=${TAG}"
 
 OUTPUT=output

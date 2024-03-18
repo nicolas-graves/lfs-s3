@@ -1,5 +1,4 @@
 include makefiles/common.mk
-include makefiles/osx.mk
 include makefiles/windows.mk
 
 clean:
@@ -8,3 +7,4 @@ clean:
 ${OUTPUT}/:
 	@mkdir $@
 
+msi: ${WINDOWS}/${PROJECT}_${TAG}.msi
