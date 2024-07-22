@@ -2,59 +2,60 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"io"
+	"log"
 	"os"
+	"strings"
 
-	"git.sr.ht/~ngraves/lfs-s3/service"
+	"github.com/infinitez-one/izlfs-s3/compression"
+	"github.com/infinitez-one/izlfs-s3/s3adapter"
+	"github.com/infinitez-one/izlfs-s3/service"
 )
 
-var Version = "Custom build"
-var (
-	printVersion bool
-	debug        bool
-)
+var config s3adapter.Config
+var comp string
 
 func init() {
-	flag.BoolVar(&printVersion, "version", false, "Print version")
-	flag.BoolVar(&debug, "debug", false, "Enable debug output")
+	flag.StringVar(&config.AccessKeyId, "access_key_id", "", "S3 Access Key ID")
+	flag.StringVar(&config.SecretAccessKey, "secret_access_key", "", "S3 Secret Access Key")
+	flag.StringVar(&config.Bucket, "bucket", "", "S3 Bucket")
+	flag.StringVar(&config.Endpoint, "endpoint", "", "S3 Endpoint")
+	flag.StringVar(&config.Region, "region", "us", "S3 Region")
+	flag.StringVar(&config.RootPath, "root_path", "", "Path within the bucket under which LFS files are uploaded. Can be empty.")
+	flag.BoolVar(&config.DeleteOtherVersions, "delete_other_versions", true, "Whether to delete other (e.g. uploaded using different compression methods) versions of the stored file after upload.")
 
-	flag.Usage = func() {
-		usage := `
-Usage:
-  git-lfs-s3 [options]
+	var compressions []string
+	for _, c := range compression.Compressions {
+		compressions = append(compressions, c.Name())
+	}
+	flag.StringVar(&comp, "compression", compression.Compressions[0].Name(), "Compression to use for storing files. Possible values: "+
+		strings.Join(compressions, ", "))
+}
 
-Options:
-  --version    Report the version number and exit
-  --debug      Enable debug output
-
-Note:
-  This tool should only be called by git-lfs as documented in Custom Transfers:
-  https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md
-
-  The arguments should be provided via gitconfig at lfs.customtransfer.<name>.args
-`
-		fmt.Fprintf(os.Stderr, usage)
+func tryFromEnv(setting *string, key string) {
+	if *setting == "" {
+		*setting = os.Getenv(key)
 	}
 }
 
-// Execute runs the main logic of the program and handles command line arguments.
-func execute() {
-	flag.Parse()
-
-	if printVersion {
-		os.Stderr.WriteString(fmt.Sprintf("git-lfs-s3 %v\n", Version))
-		os.Exit(0)
+func run() error {
+	for _, c := range compression.Compressions {
+		if c.Name() == comp {
+			config.Compression = c
+			break
+		}
 	}
 
-	service.Serve(os.Stdin, os.Stdout, func() io.Writer {
-		if debug {
-			return os.Stderr
-		}
-		return io.Discard
-	}())
+	// For backwards-compatibility, also allow using env variables.
+	tryFromEnv(&config.Bucket, "S3_BUCKET")
+	tryFromEnv(&config.Region, "AWS_REGION")
+	tryFromEnv(&config.Endpoint, "AWS_S3_ENDPOINT")
+
+	return service.Serve(os.Stdin, os.Stdout, os.Stderr, &config)
 }
 
 func main() {
-	execute()
+	flag.Parse()
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
