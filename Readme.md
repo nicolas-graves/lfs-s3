@@ -1,5 +1,14 @@
 # Git LFS: S3 agent
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/infinitez-one/izlfs-s3.svg)](https://pkg.go.dev/github.com/infinitez-one/izlfs-s3)
+![Build](https://github.com/infinitez-one/izlfs-s3/actions/workflows/build.yml/badge.svg)
+![Test](https://github.com/infinitez-one/izlfs-s3/actions/workflows/test.yml/badge.svg)
+
+
+## Installation
+
+Run `go install github.com/infinitez-one/izlfs-s3@latest` to install the latest version on your system.
+
 ## Origin
 
 Originally forked from https://github.com/nicolas-graves/lfs-s3, this has been rewritten quite significantly.
@@ -27,13 +36,6 @@ The primary reason I developed this fork is to save money on a very large (lots 
   - AWS environment variables or config profile
 - Compresses uploaded files.
 - Avoids redundant re-uploads based on S3 checksumming.
-
-## Download & install
-
-You need `izlfs-s3[.exe]` to be on your system path somewhere.
-
-I haven't setup the releases yet, so you'll need to build it from
-source using the standard `go build`.
 
 ## Configuration
 
