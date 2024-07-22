@@ -30,13 +30,6 @@ bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
 - Compresses uploaded files.
 - Avoids redundant re-uploads based on S3 checksumming.
 
-## Download & install
-
-You need `lfs-s3[.exe]` to be on your system path somewhere.
-
-I haven't setup the releases yet, so you'll need to build it from
-source using the standard `go build`.
-
 ## Configuration
 
 > [!NOTE]
