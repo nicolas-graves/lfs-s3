@@ -12,6 +12,10 @@ for [Git LFS](https://git-lfs.github.com/) which simply sends LFS
 binary files to an [S3
 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
 
+## Motivation
+
+The primary reason I developed this fork is to save money on a very large (lots of large LFS files), privately used github repo. This solution works with github and stores compressed LFS files on a much cheaper S3 provider (in my case GCS).
+
 > [!IMPORTANT]
 > This has been developed and tested primaraily for Google Cloud Storage.
 
