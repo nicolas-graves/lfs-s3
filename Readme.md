@@ -11,7 +11,7 @@ Run `go install github.com/infinitez-one/izlfs-s3@latest` to install the latest 
 
 To clone a git repo that uses this (or any other non-default) LFS agent, use the following command: `GIT_LFS_SKIP_SMUDGE=1 git clone <source>`
 
-Then [configure](#configuration) izlfs-s3 and run `git lfs fetch`.
+Then [configure](#configuration) izlfs-s3 and run `git lfs pull`.
 
 ## Origin
 
