@@ -75,7 +75,10 @@ func (conn *Connection) Upload(oid string, localPath string, callback func(trans
 
 			rawsum := checksummer.Sum32()
 			log.Printf("RawSum: 0x%x", rawsum)
-			checksum := base64.StdEncoding.EncodeToString(big.NewInt(int64(rawsum)).Bytes())
+			bigIntSum := big.NewInt(int64(rawsum))
+			bytesSum := make([]byte, 4)
+			bigIntSum.FillBytes(bytesSum)
+			checksum := base64.StdEncoding.EncodeToString(bytesSum)
 			log.Printf("File checksum: %s", checksum)
 
 			if *ho.ChecksumCRC32C != checksum {
