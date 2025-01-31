@@ -128,8 +128,9 @@ when you clone fresh. Here's the sequence:
 * Relation to other tools : There were plenty of similar "solutions"
   out there, but they all seemed either outdated, unmaintained, or too
   complex (I don't need a running server to send a file!). It seems that
-  this repo since influenced a few alternatives, namely
-  [lfs-os](https://github.com/hacksadecimal/lfs-os) then
-  [lfs-dal](https://github.com/regen100/lfs-dal). The latter is very
-  promising and will probably be recommended instead of this project
-  in a near future.
+  this repo since influenced a few alternatives, namely:
+  - [lfs-os](https://github.com/hacksadecimal/lfs-os)
+  - [lfs-dal](https://github.com/regen100/lfs-dal). This one is
+  recommended instead of this project if you're looking for a more
+  capable solution.
+  - Amazon's [git-remote-s3](https://github.com/awslabs/git-remote-s3)
