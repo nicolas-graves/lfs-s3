@@ -27,5 +27,5 @@ require (
 	github.com/aws/smithy-go v1.22.2 // indirect
 )
 
-go 1.20
-toolchain go1.24.1
+go 1.22
+toolchain go1.24.2
