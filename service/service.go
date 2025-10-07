@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"regexp"
 
 	"github.com/nicolas-graves/lfs-s3/api"
 	"github.com/nicolas-graves/lfs-s3/s3adapter"
@@ -80,8 +81,10 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) 
 	return nil
 }
 
+var oidRegex = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
 func localPath(oid string) (string, error) {
-	if len(oid) < 4 {
+	if !oidRegex.MatchString(oid) {
 		return "", errors.Errorf("Invalid lfs object ID %s", oid)
 	}
 	return fmt.Sprintf(".git/lfs/objects/%s/%s/%s", oid[:2], oid[2:4], oid), nil
