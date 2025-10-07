@@ -1,4 +1,4 @@
-FROM alpine:3.20.1
+FROM alpine:3.21.0
 
 RUN apk add --no-cache curl git git-lfs minio minio-client
 
