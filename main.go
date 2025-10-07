@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/infinitez-one/izlfs-s3/compression"
-	"github.com/infinitez-one/izlfs-s3/s3adapter"
-	"github.com/infinitez-one/izlfs-s3/service"
+	"github.com/nicolas-graves/lfs-s3/compression"
+	"github.com/nicolas-graves/lfs-s3/s3adapter"
+	"github.com/nicolas-graves/lfs-s3/service"
 )
 
 var config s3adapter.Config

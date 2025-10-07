@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/infinitez-one/izlfs-s3/compression"
+	"github.com/nicolas-graves/lfs-s3/compression"
 )
 
 type Config struct {
@@ -19,7 +19,7 @@ type Config struct {
 }
 
 func (config *Config) Retrieve(context.Context) (aws.Credentials, error) {
-	return aws.Credentials{Source: "izlfs-s3",
+	return aws.Credentials{Source: "lfs-s3",
 		AccessKeyID:     config.AccessKeyId,
 		SecretAccessKey: config.SecretAccessKey,
 	}, nil

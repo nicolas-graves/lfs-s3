@@ -1,19 +1,25 @@
 # Git LFS: S3 agent
 
-## Origin
+[![Go Reference](https://pkg.go.dev/badge/github.com/nicolas-graves/lfs-s3.svg)](https://pkg.go.dev/github.com/nicolas-graves/lfs-s3)
+![Build](https://github.com/nicolas-graves/lfs-s3/actions/workflows/build.yml/badge.svg)
+![Test](https://github.com/nicolas-graves/lfs-s3/actions/workflows/test.yml/badge.svg)
 
-Originally forked from https://github.com/nicolas-graves/lfs-s3, this has been rewritten quite significantly.
+
+## Installation
+
+Run `go install github.com/nicolas-graves/lfs-s3@latest` to install the latest version on your system.
+
+To clone a git repo that uses this (or any other non-default) LFS agent, use the following command: `GIT_LFS_SKIP_SMUDGE=1 git clone <source>`
+
+Then [configure](#configuration) lfs-s3 and run `git lfs pull`.
 
 ## Details
 
-`izlfs-s3` is a [Custom Transfer
+`lfs-s3` is a [Custom Transfer
 Agent](https://github.com/git-lfs/git-lfs/blob/master/docs/custom-transfers.md)
 for [Git LFS](https://git-lfs.github.com/) which simply sends LFS
 binary files to an [S3
 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
-
-> [!IMPORTANT]
-> This has been developed and tested primaraily for Google Cloud Storage.
 
 ## Features
 
@@ -26,7 +32,7 @@ bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
 
 ## Download & install
 
-You need `izlfs-s3[.exe]` to be on your system path somewhere.
+You need `lfs-s3[.exe]` to be on your system path somewhere.
 
 I haven't setup the releases yet, so you'll need to build it from
 source using the standard `go build`.
@@ -43,9 +49,9 @@ Command-line parameters can be used to configure every aspect of the tool, inclu
 
 Run these commands in your git repo to configure your LFS S3 storage:
 ```sh
-git config --add lfs.customtransfer.izlfs-s3.path izlfs-s3
-git config --add lfs.standalonetransferagent izlfs-s3
-git config --add lfs.customtransfer.izlfs-s3.args '--access_key_id=<S3 access key> --secret_access_key=<S3 secret key> --bucket=<S3 bucket> --endpoint=<S3 endpoint> --region=<optional S3 region>'
+git config --add lfs.customtransfer.lfs-s3.path lfs-s3
+git config --add lfs.standalonetransferagent lfs-s3
+git config --add lfs.customtransfer.lfs-s3.args '--access_key_id=<S3 access key> --secret_access_key=<S3 secret key> --bucket=<S3 bucket> --endpoint=<S3 endpoint> --region=<optional S3 region>'
 ```
 
 The full list of command-line flags:

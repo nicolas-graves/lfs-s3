@@ -1,4 +1,4 @@
-module github.com/infinitez-one/izlfs-s3
+module github.com/nicolas-graves/lfs-s3
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.30.3

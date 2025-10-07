@@ -34,7 +34,7 @@ git clone --progress fake-remote-repo local-repo
 # First repo: configure using commandline flags.
 cd local-repo
 git config core.autocrlf false
-echo "# This is a izlfs-s3 test." > README.md
+echo "# This is a lfs-s3 test." > README.md
 git add README.md
 git commit -m "Add pre-lfs commit."
 git push origin main
@@ -42,9 +42,9 @@ git lfs install --local
 git lfs track "*.bin"
 git add .gitattributes
 git commit -m "Adding .gitattributes"
-git config --add lfs.customtransfer.izlfs-s3.path "$SCRIPT_DIR/izlfs-s3"
-git config --add lfs.customtransfer.izlfs-s3.args '--access_key_id='"$AWS_ACCESS_KEY_ID"' --secret_access_key='"$AWS_SECRET_ACCESS_KEY"' --bucket='"$S3_BUCKET"' --endpoint='"$AWS_S3_ENDPOINT"' --root_path='"$ROOT_PATH"
-git config --add lfs.standalonetransferagent izlfs-s3
+git config --add lfs.customtransfer.lfs-s3.path "$SCRIPT_DIR/lfs-s3"
+git config --add lfs.customtransfer.lfs-s3.args '--access_key_id='"$AWS_ACCESS_KEY_ID"' --secret_access_key='"$AWS_SECRET_ACCESS_KEY"' --bucket='"$S3_BUCKET"' --endpoint='"$AWS_S3_ENDPOINT"' --root_path='"$ROOT_PATH"
+git config --add lfs.standalonetransferagent lfs-s3
 git config --add lfs.concurrenttransfers 2
 dd if=/dev/urandom of=blob1.bin bs=1024 count=1024
 dd if=/dev/urandom of=blob2.bin bs=1024 count=1024
@@ -64,9 +64,9 @@ GIT_LFS_SKIP_SMUDGE=1 git clone --progress fake-remote-repo local-repo-dup
 cd local-repo-dup
 git config core.autocrlf false
 git lfs install --local
-git config --add lfs.customtransfer.izlfs-s3.path "$SCRIPT_DIR/izlfs-s3"
-git config --add lfs.customtransfer.izlfs-s3.args --root_path="$ROOT_PATH"
-git config --add lfs.standalonetransferagent izlfs-s3
+git config --add lfs.customtransfer.lfs-s3.path "$SCRIPT_DIR/lfs-s3"
+git config --add lfs.customtransfer.lfs-s3.args --root_path="$ROOT_PATH"
+git config --add lfs.standalonetransferagent lfs-s3
 git config --add lfs.concurrenttransfers 2
 git reset --hard main
 git lfs pull
@@ -88,7 +88,7 @@ fi
 
 # Reupload with a different compression. ZSTD files should be removed, overwritten by gzip files.
 cd local-repo-dup
-git config --replace-all lfs.customtransfer.izlfs-s3.args '--access_key_id='"$AWS_ACCESS_KEY_ID"' --secret_access_key='"$AWS_SECRET_ACCESS_KEY"' --bucket='"$S3_BUCKET"' --endpoint='"$AWS_S3_ENDPOINT"' --compression=gzip --root_path='"$ROOT_PATH"
+git config --replace-all lfs.customtransfer.lfs-s3.args '--access_key_id='"$AWS_ACCESS_KEY_ID"' --secret_access_key='"$AWS_SECRET_ACCESS_KEY"' --bucket='"$S3_BUCKET"' --endpoint='"$AWS_S3_ENDPOINT"' --compression=gzip --root_path='"$ROOT_PATH"
 git lfs push --all origin main
 cd ..
 
