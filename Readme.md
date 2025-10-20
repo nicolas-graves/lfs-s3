@@ -54,12 +54,12 @@ git config --add lfs.customtransfer.lfs-s3.args '--access_key_id=<S3 access key>
 The full list of command-line flags:
 
 | Name                      | Description                                                                                                           | Default value | Optional |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------- | -------- |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------|---------------|----------|
 | `--access_key_id`         | S3 Access key ID                                                                                                      |               | False    |
 | `--secret_access_key`     | S3 Secret access key                                                                                                  |               | False    |
 | `--bucket`                | S3 Bucket name                                                                                                        |               | False    |
 | `--endpoint`              | S3 Endpoint                                                                                                           |               | False    |
-| `--region`                | S3 Region                                                                                                             | `us`          | True     |
+| `--region`                | S3 Region                                                                                                             |               | True     |
 | `--root_path`             | Path within the bucket under which LFS files are uploaded. Can be empty.                                              |               | True     |
 | `--delete_other_versions` | Whether to delete other (e.g. uploaded using different compression methods) versions of the stored file after upload. | `true`        | False    |
 | `--compression`           | Compression to use for storing files. Possible values: zstd, gzip, none.                                              | `zstd`        | False    |
@@ -91,9 +91,10 @@ Pull requests are welcome.
 
 ## Testing
 
-You can simply test if your S3 provider works with a `.envrc` file
-given as an argument to the test file `test.sh`. Note that this will
-upload a random 1mb binary to your bucket.
+You can test locally on a Linux OS using `./run_test.sh`. You can also
+test if your S3 provider works with a local `.envrc` file using
+`test/run.sh $(pwd)/.envrc`. Note that this will upload a random 1mb
+binary to your bucket.
 
 ### Configure a fresh repo
 
@@ -130,10 +131,9 @@ you want to either move to a folder, or replicate, it's a little more complicate
 
 ### Cloning a repo
 
-There is one downside to this 'simple' approach to LFS storage - on cloning a
-repository, git-lfs can't know how to fetch the LFS content, until you configure
-things again using `git config`. That's the nature of the fact that you're using
-a simple Git remote with no LFS API to expose this information.
+There is one downside to this 'simple' (no LFS API) approach to LFS
+storage - on cloning a repository, git-lfs can't know how to fetch the
+LFS content, until you configure things again using `git config`.
 
 It's not that hard to resolve though, you just need a couple of extra steps
 when you clone fresh. Here's the sequence:
@@ -157,7 +157,9 @@ when you clone fresh. Here's the sequence:
   you have common files between projects (they'll have the same hash).
 * This work benefited a lot from
   [lfs-folderstore](https://github.com/sinbad/lfs-folderstore),
-  thanks!
+  thanks! I also rebased on a fork of this repo
+  [izlfs-s3](github.com/infinitez-one/izlfs-s3), which had substantial
+  rewrites and additions.
 * Upload and download progress report are implemented, but they only
   report for every 5 MB of data. This is currently hardcoded, as it's
   the limit value for my S3 provider. It can be put in an environment

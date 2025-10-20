@@ -19,7 +19,7 @@ func init() {
 	flag.StringVar(&config.SecretAccessKey, "secret_access_key", "", "S3 Secret Access Key")
 	flag.StringVar(&config.Bucket, "bucket", "", "S3 Bucket")
 	flag.StringVar(&config.Endpoint, "endpoint", "", "S3 Endpoint")
-	flag.StringVar(&config.Region, "region", "us", "S3 Region")
+	flag.StringVar(&config.Region, "region", "", "S3 Region")
 	flag.StringVar(&config.RootPath, "root_path", "", "Path within the bucket under which LFS files are uploaded. Can be empty.")
 	flag.BoolVar(&config.DeleteOtherVersions, "delete_other_versions", true, "Whether to delete other (e.g. uploaded using different compression methods) versions of the stored file after upload.")
 
