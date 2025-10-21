@@ -10,21 +10,20 @@ import (
 
 	"github.com/nicolas-graves/lfs-s3/api"
 	"github.com/nicolas-graves/lfs-s3/s3adapter"
-	"github.com/pkg/errors"
 )
 
 func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) error {
 	if config.Bucket == "" {
-		return errors.Errorf("no bucket set")
+		return fmt.Errorf("no bucket set")
 	}
 	if config.Endpoint == "" {
-		return errors.Errorf("no endpoint set")
+		return fmt.Errorf("no endpoint set")
 	}
 	if config.Compression == nil {
-		return errors.Errorf("invalid compression set")
+		return fmt.Errorf("invalid compression set")
 	}
 	if (config.AccessKeyId == "") != (config.SecretAccessKey == "") {
-		return errors.Errorf("access key and secret key should either both be set or both be empty")
+		return fmt.Errorf("access key and secret key should either both be set or both be empty")
 	}
 
 	conn, err := s3adapter.New(config)
@@ -85,7 +84,7 @@ var oidRegex = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 func localPath(oid string) (string, error) {
 	if !oidRegex.MatchString(oid) {
-		return "", errors.Errorf("Invalid lfs object ID %s", oid)
+		return "", fmt.Errorf("Invalid lfs object ID %s", oid)
 	}
 	return fmt.Sprintf(".git/lfs/objects/%s/%s/%s", oid[:2], oid[2:4], oid), nil
 }

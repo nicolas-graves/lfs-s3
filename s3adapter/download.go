@@ -2,6 +2,7 @@ package s3adapter
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/nicolas-graves/lfs-s3/compression"
-	"github.com/pkg/errors"
 )
 
 type writerAtWrapper struct {
@@ -20,7 +20,7 @@ type writerAtWrapper struct {
 
 func (waw *writerAtWrapper) WriteAt(p []byte, off int64) (n int, err error) {
 	if off != waw.pos {
-		return 0, errors.Errorf("Invalid WriteAt position, expected: %d, got: %d", waw.pos, off)
+		return 0, fmt.Errorf("Invalid WriteAt position, expected: %d, got: %d", waw.pos, off)
 	}
 	waw.pos += int64(len(p))
 	return waw.w.Write(p)
@@ -61,7 +61,7 @@ func (conn *Connection) Download(oid string, localPath string, callback func(tra
 	}
 
 	if comp == nil {
-		return errors.Errorf("No downloadable version of the file was found")
+		return fmt.Errorf("No downloadable version of the file was found")
 	}
 
 	log.Printf("Resolved remote path: %s with compression %s", basePath, comp.Name())

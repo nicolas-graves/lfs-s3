@@ -7,7 +7,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.69.0
 	github.com/aws/smithy-go v1.22.1
 	github.com/klauspost/compress v1.17.11
-	github.com/pkg/errors v0.9.1
 )
 
 require (

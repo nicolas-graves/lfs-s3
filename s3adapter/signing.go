@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/pkg/errors"
 )
 
 // ignoreSigningHeaders excludes the listed headers
@@ -39,7 +38,7 @@ func ignoreHeaders(headers []string) middleware.FinalizeMiddleware {
 		func(ctx context.Context, in middleware.FinalizeInput, next middleware.FinalizeHandler) (out middleware.FinalizeOutput, metadata middleware.Metadata, err error) {
 			req, ok := in.Request.(*smithyhttp.Request)
 			if !ok {
-				return out, metadata, &v4.SigningError{Err: errors.Errorf("(ignoreHeaders) unexpected request middleware type %T", in.Request)}
+				return out, metadata, &v4.SigningError{Err: fmt.Errorf("(ignoreHeaders) unexpected request middleware type %T", in.Request)}
 			}
 
 			ignored := make(map[string]string, len(headers))

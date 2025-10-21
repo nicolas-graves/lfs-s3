@@ -3,6 +3,7 @@ package s3adapter
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"hash/crc32"
 	"io"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/nicolas-graves/lfs-s3/compression"
-	"github.com/pkg/errors"
 )
 
 type uploadTracker struct {
@@ -67,7 +67,7 @@ func (conn *Connection) Upload(oid string, localPath string, callback func(trans
 		}
 
 		if ho.ContentLength != nil && *ho.ContentLength != size {
-			return errors.Errorf("Existing remote file has different size, local: %d, remote: %d", size, *ho.ContentLength)
+			return fmt.Errorf("Existing remote file has different size, local: %d, remote: %d", size, *ho.ContentLength)
 		}
 
 		if ho.ChecksumCRC32C != nil {
@@ -82,7 +82,7 @@ func (conn *Connection) Upload(oid string, localPath string, callback func(trans
 			log.Printf("File checksum: %s", checksum)
 
 			if *ho.ChecksumCRC32C != checksum {
-				return errors.Errorf("Existing remote file has different checksum, local: %v, remote: %v", checksum, *ho.ChecksumCRC32C)
+				return fmt.Errorf("Existing remote file has different checksum, local: %v, remote: %v", checksum, *ho.ChecksumCRC32C)
 			}
 		}
 
