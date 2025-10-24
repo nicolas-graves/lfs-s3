@@ -62,6 +62,7 @@ The full list of command-line flags:
 | `--region`                | S3 Region                                                                                                             |               | True     |
 | `--root_path`             | Path within the bucket under which LFS files are uploaded. Can be empty.                                              |               | True     |
 | `--delete_other_versions` | Whether to delete other (e.g. uploaded using different compression methods) versions of the stored file after upload. | `true`        | False    |
+| `--use_path_style`        | Whether to use the S3 SDK Path Style option.                                                                          | `false`       | False    |
 | `--compression`           | Compression to use for storing files. Possible values: zstd, gzip, none.                                              | `zstd`        | False    |
 
 ### Alternative configuration method
