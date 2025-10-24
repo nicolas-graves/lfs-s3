@@ -58,6 +58,9 @@ func createS3Client(conf *Config) (*s3.Client, error) {
 		if conf.AccessKeyId != "" {
 			o.Credentials = conf
 		}
+		if conf.UsePathStyle {
+			o.UsePathStyle = true
+		}
 		if strings.Contains(conf.Endpoint, "storage.googleapis.com") {
 			ignoreSigningHeaders(o, []string{"Accept-Encoding"})
 		}

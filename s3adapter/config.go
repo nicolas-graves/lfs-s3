@@ -14,6 +14,7 @@ type Config struct {
 	Endpoint            string
 	Region              string
 	RootPath            string
+	UsePathStyle        bool
 	Compression         compression.Compression
 	DeleteOtherVersions bool
 }
