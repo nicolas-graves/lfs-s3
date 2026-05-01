@@ -5,7 +5,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.16
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.15
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.99.1
-	github.com/aws/smithy-go v1.25.0
+	github.com/aws/smithy-go v1.25.1
 	github.com/klauspost/compress v1.18.5
 )
 
