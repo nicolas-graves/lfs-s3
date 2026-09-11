@@ -13,9 +13,7 @@ To clone a git repo that uses this (or any other non-default) LFS agent, use the
 
 Then [configure](#configuration) lfs-s3 and run `git lfs pull`.
 
-To clone a git repo that uses this (or any other non-default) LFS agent, use the following command: `GIT_LFS_SKIP_SMUDGE=1 git clone <source>`
-
-Then [configure](#configuration) lfs-s3 and run `git lfs pull`.
+Worktrees share the configuration and the LFS object store of their main repository, so configure lfs-s3 once on the main or bare repository and run `git lfs pull` inside each worktree.
 
 ## Details
 

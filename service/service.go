@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/nicolas-graves/lfs-s3/api"
 	"github.com/nicolas-graves/lfs-s3/s3adapter"
@@ -31,6 +35,8 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) 
 		return err
 	}
 	log.Printf("Serving LFS")
+	tempDir := transferTempDir()
+	log.Printf("Downloading into %s", tempDir)
 
 	scanner := bufio.NewScanner(stdin)
 	for scanner.Scan() {
@@ -47,7 +53,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) 
 		case "terminate":
 			log.Printf("Terminating test custom adapter gracefully.")
 		case "download":
-			lp, err := localPath(req.Oid)
+			lp, err := localPath(tempDir, req.Oid)
 			if err != nil {
 				return err
 			}
@@ -57,6 +63,7 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) 
 				api.SendProgress(req.Oid, bytesProcessed, int(transferred), stdout, stderr)
 			}
 			if err := conn.Download(req.Oid, lp, callback); err != nil {
+				os.Remove(lp)
 				api.SendTransfer(req.Oid, 1, err, lp, stdout, stderr)
 			} else {
 				api.SendTransfer(req.Oid, 0, nil, lp, stdout, stderr)
@@ -80,11 +87,50 @@ func Serve(stdin io.Reader, stdout, stderr io.Writer, config *s3adapter.Config) 
 	return nil
 }
 
+// Downloads go to a temporary file that git-lfs moves into its object store once the transfer
+// completes. The file is placed next to that store so the move stays on one volume: the LFS
+// storage directory of the repository (which is shared by all worktrees and may be overridden
+// with lfs.storage), or the system temporary directory outside of a repository.
+func transferTempDir() string {
+	if storage := lfsStorageDir(); storage != "" {
+		dir := filepath.Join(storage, "tmp")
+		if err := os.MkdirAll(dir, 0o755); err == nil {
+			return dir
+		} else {
+			log.Printf("Cannot use %s for downloads: %v", dir, err)
+		}
+	}
+	return os.TempDir()
+}
+
+func lfsStorageDir() string {
+	commonDir, err := gitOutput("rev-parse", "--path-format=absolute", "--git-common-dir")
+	if err != nil {
+		log.Printf("Not inside a git repository: %v", err)
+		return ""
+	}
+	if storage, err := gitOutput("config", "--get", "lfs.storage"); err == nil && storage != "" {
+		if filepath.IsAbs(storage) {
+			return storage
+		}
+		return filepath.Join(commonDir, storage)
+	}
+	return filepath.Join(commonDir, "lfs")
+}
+
+func gitOutput(args ...string) (string, error) {
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 var oidRegex = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
-func localPath(oid string) (string, error) {
+func localPath(dir string, oid string) (string, error) {
 	if !oidRegex.MatchString(oid) {
 		return "", fmt.Errorf("Invalid lfs object ID %s", oid)
 	}
-	return fmt.Sprintf(".git/lfs/objects/%s/%s/%s", oid[:2], oid[2:4], oid), nil
+	return filepath.Join(dir, oid), nil
 }

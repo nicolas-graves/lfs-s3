@@ -135,4 +135,31 @@ rm -rf .git/lfs/objects
 git lfs fetch
 cd ..
 
+# Third repo: a bare clone with a worktree, configured on the bare repository. The worktree has
+# no .git directory of its own, so downloads must land next to the shared LFS store.
+GIT_LFS_SKIP_SMUDGE=1 git clone --bare --progress fake-remote-repo bare-repo
+git -C bare-repo lfs install --local
+git -C bare-repo config --add lfs.customtransfer.lfs-s3.path "$SCRIPT_DIR/lfs-s3"
+git -C bare-repo config --add lfs.customtransfer.lfs-s3.args --root_path="$ROOT_PATH"
+git -C bare-repo config --add lfs.standalonetransferagent lfs-s3
+git -C bare-repo config --add lfs.concurrenttransfers 2
+GIT_LFS_SKIP_SMUDGE=1 git -C bare-repo worktree add ../worktree main
+cd worktree
+git config core.autocrlf false
+mkdir subdir
+cd subdir
+git lfs pull
+cd ..
+for f in blob1.bin blob2.bin blob3.bin
+do
+  cmp "$f" "../local-repo/$f"
+done
+LEFTOVER_COUNT=$(ls -A ../bare-repo/lfs/tmp 2>/dev/null | grep -E '^[0-9a-f]{64}$' | wc -l)
+if [ "$LEFTOVER_COUNT" -ne "0" ]
+then
+  echo "Leftover download files in the LFS temporary directory."
+  exit 1
+fi
+cd ..
+
 echo "PASS"
