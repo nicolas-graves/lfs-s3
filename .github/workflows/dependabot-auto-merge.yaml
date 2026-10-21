@@ -8,7 +8,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'infinitez-one/izlfs-s3'
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'nicolas-graves/lfs-s3'
     steps:
       - name: Dependabot metadata
         id: metadata
