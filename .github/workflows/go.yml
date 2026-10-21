@@ -27,7 +27,7 @@ jobs:
             out_asset: lfs-s3-windows.exe        # Windows binary
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Set up Go
       uses: actions/setup-go@v6
       with:
