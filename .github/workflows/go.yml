@@ -32,16 +32,16 @@ jobs:
       uses: actions/setup-go@v7
       with:
         go-version-file: go.mod
-    - name: Tidy mod
-      run: go mod tidy
     - name: Build
       run: go build -v -ldflags "-s -w"
     - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }} 
-        asset_path: ${{ matrix.in_asset }}
-        asset_name: ${{ matrix.out_asset }}
-        asset_content_type: application/octet-stream
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ github.repository }}
+        TAG: ${{ github.event.release.tag_name }}
+        IN_ASSET: ${{ matrix.in_asset }}
+        OUT_ASSET: ${{ matrix.out_asset }}
+      run: |
+        mv "$IN_ASSET" "$OUT_ASSET"
+        gh release upload "$TAG" "$OUT_ASSET" --clobber
