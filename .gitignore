@@ -1,2 +1,4 @@
-izlfs-s3.exe
-izlfs-s3
+lfs-s3
+lfs-s3.exe
+test/lfs-s3
+.envrc
