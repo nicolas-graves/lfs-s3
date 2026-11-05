@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,8 +12,13 @@ import (
 	"github.com/nicolas-graves/lfs-s3/service"
 )
 
+// Version is set at build time via -ldflags "-X main.Version=...".
+// It defaults to "dev" for local/unversioned builds.
+var Version = "dev"
+
 var config s3adapter.Config
 var comp string
+var showVersion bool
 
 func init() {
 	flag.StringVar(&config.AccessKeyId, "access_key_id", "", "S3 Access Key ID")
@@ -30,6 +36,8 @@ func init() {
 	}
 	flag.StringVar(&comp, "compression", compression.Compressions[0].Name(), "Compression to use for storing files. Possible values: "+
 		strings.Join(compressions, ", "))
+
+	flag.BoolVar(&showVersion, "version", false, "Print version information and exit.")
 }
 
 func tryFromEnv(setting *string, key string) {
@@ -56,6 +64,10 @@ func run() error {
 
 func main() {
 	flag.Parse()
+	if showVersion {
+		fmt.Printf("lfs-s3 %s\n", Version)
+		return
+	}
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}

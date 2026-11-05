@@ -24,6 +24,14 @@ ROOT_PATH="${ROOT_PATH:-testroot}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Smoke test: --version must print a version string and exit 0 without
+# needing any S3/stdin setup. Runs before the S3-dependent tests below.
+VERSION_OUTPUT="$("$SCRIPT_DIR/lfs-s3" --version)"
+echo "$VERSION_OUTPUT" | grep -q "lfs-s3" || {
+  echo "Unexpected --version output: $VERSION_OUTPUT"
+  exit 1
+}
+
 # Setup S3 client alias for verification
 if [ "$USE_MINIO" -eq 1 ]; then
   # Configure mcli for real S3
